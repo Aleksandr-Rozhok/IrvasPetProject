@@ -1,0 +1,139 @@
+{
+  "posts": [
+    {
+      "id": 1,
+      "title": "json-server",
+      "author": "typicode"
+    },
+    {
+      "user_name": "asd",
+      "user_phone": "asdasd",
+      "id": 2
+    },
+    {
+      "user_name": "sadasd",
+      "user_phone": "asdasd",
+      "id": 3
+    },
+    {
+      "user_name": "asda",
+      "user_phone": "asdasd",
+      "id": 4
+    },
+    {
+      "user_name": "asdas",
+      "user_phone": "sad",
+      "id": 5
+    },
+    {
+      "user_name": "asd",
+      "user_phone": "sdasd",
+      "id": 6
+    },
+    {
+      "user_name": "awd",
+      "user_phone": "awdaw",
+      "id": 7
+    },
+    {
+      "user_name": "awd",
+      "user_phone": "w",
+      "id": 8
+    },
+    {
+      "user_name": "awd",
+      "user_phone": "awd",
+      "id": 9
+    },
+    {
+      "user_name": "awd",
+      "user_phone": "awd",
+      "id": 10
+    },
+    {
+      "user_name": "asd",
+      "user_phone": "asd",
+      "id": 11
+    },
+    {
+      "user_name": "sad",
+      "user_phone": "asd",
+      "id": 12
+    },
+    {
+      "user_name": "asd",
+      "user_phone": "asd",
+      "id": 13
+    },
+    {
+      "user_name": "asd",
+      "user_phone": "asd",
+      "id": 14
+    },
+    {
+      "user_name": "asd",
+      "user_phone": "asd",
+      "id": 15
+    },
+    {
+      "user_name": "asd",
+      "user_phone": "asd",
+      "id": 16
+    },
+    {
+      "user_name": "asd",
+      "user_phone": "asd",
+      "id": 17
+    },
+    {
+      "user_name": "asd",
+      "user_phone": "asd",
+      "id": 18
+    },
+    {
+      "user_name": "asd",
+      "user_phone": "asd",
+      "id": 19
+    },
+    {
+      "user_name": "asd",
+      "user_phone": "asd",
+      "id": 20
+    },
+    {
+      "user_name": "assda",
+      "user_phone": "1212",
+      "id": 21
+    },
+    {
+      "user_name": "asd",
+      "user_phone": "asd",
+      "id": 22
+    },
+    {
+      "user_name": "asdasd1122sdasd",
+      "user_phone": "xx",
+      "id": 23
+    },
+    {
+      "user_name": "фыв",
+      "user_phone": "фыфывфыв",
+      "id": 24
+    },
+    {
+      "user_name": "ывыв",
+      "user_phone": "1212122",
+      "id": 25
+    }
+  ],
+  "comments": [
+    {
+      "id": 1,
+      "body": "some comment",
+      "postId": 1
+    }
+  ],
+  "profile": {
+    "name": "typicode"
+  }
+}
