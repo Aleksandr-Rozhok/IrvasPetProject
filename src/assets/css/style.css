@@ -491,6 +491,14 @@ textarea:focus {
   color: #454545;
 }
 
+.tab-active {
+  background-color: #CCDFEB; /* Цвет фона активного таба */
+  color: white; /* Цвет текста активного таба */
+  padding: 10px; /* Отступы */
+  border-radius: 5px; /* Радиус скругления */
+  font-weight: bold; /* Жирный шрифт */
+}
+
 /*Decoration*/
 .decoration {
   padding: 8rem 0;
@@ -1813,6 +1821,7 @@ textarea:focus {
     padding: 1rem 5rem;
   }
 }
+
 
 /* small devices, tablets */
 @media only screen and (max-width: 768px) {
