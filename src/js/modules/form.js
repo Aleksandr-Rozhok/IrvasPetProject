@@ -1,6 +1,6 @@
-import { showPopup } from "./modal";
+import { showPopup } from "../services/services";
 import { postData } from "../services/services";
-import { closePopup } from "./modal";
+import { closePopup } from "../services/services";
 
 function forms(formSelector) {
     const forms = document.querySelectorAll(formSelector),
@@ -35,7 +35,7 @@ function forms(formSelector) {
 
             const json = JSON.stringify(Object.fromEntries(formData.entries()));
 
-            postData('http://localhost:4000/posts', json)
+            postData('http://localhost:3000/posts', json)
                 .then(data => {
                     console.log(data);
                     showThanksModal(message.success);
@@ -46,6 +46,8 @@ function forms(formSelector) {
                 })
                 .finally(() => {
                     form.reset();
+                    validateInput(e.target.value, input, 'phone');
+                    validateInput(e.target.value, input, 'name')
                     statusMessage.remove();
                 })
         })
@@ -58,7 +60,7 @@ function forms(formSelector) {
     }
 
     function validateInput(value, input, type) {
-        let checkForPhone = value.length < 7 || value.length > 10 && !onlyNumbersRegex.test(value),
+        let checkForPhone = !onlyNumbersRegex.test(value) && value.length < 7 || value.length > 10,
             checkForName = value.length < 3 || value.length > 15;
 
         if (value === '') {

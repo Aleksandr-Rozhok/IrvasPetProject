@@ -20,5 +20,10 @@ const getResources = async (url) => {
     return await res.json();
 };
 
+const showPopup = (popup) => popup.style.display = 'flex';
+const closePopup = (popup) => popup.style.display = 'none';
+
 export {postData};
 export {getResources};
+export {showPopup};
+export {closePopup};

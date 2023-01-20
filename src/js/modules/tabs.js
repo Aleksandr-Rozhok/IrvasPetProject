@@ -30,7 +30,7 @@ const hideTabContent = () => {
 }
 
 const showTabContent = (i = 0) => {
-    if (!titleTabs[i].children[0].matches(`div.${activeClass}`)) {
+    if (titleTabs[i].children[0].classList.contains('no_click')) {
         titleTabs[i].children[0].classList.add(activeClass);
     } else {
         titleTabs[i].classList.add(activeClass);
