@@ -46,8 +46,8 @@ function forms(formSelector) {
                 })
                 .finally(() => {
                     form.reset();
-                    validateInput(e.target.value, input, 'phone');
-                    validateInput(e.target.value, input, 'name')
+                    clearAllFieldsAfterPost(phoneInputs);
+                    clearAllFieldsAfterPost(nameInputs);
                     statusMessage.remove();
                 })
         })
@@ -60,16 +60,20 @@ function forms(formSelector) {
     }
 
     function validateInput(value, input, type) {
-        let checkForPhone = !onlyNumbersRegex.test(value) && value.length < 7 || value.length > 10,
+        let checkForPhone = onlyNumbersRegex.test(value) && value.length > 7 && value.length <= 10,
             checkForName = value.length < 3 || value.length > 15;
 
         if (value === '') {
             input.style.border = '';
-        } else if(type === 'phone' ? checkForPhone : checkForName) {
+        } else if(type === 'phone' ? !checkForPhone : checkForName) {
             input.style.border = '1px solid red';
         } else {
             input.style.border = '1px solid green';
         }
+    }
+
+    function clearAllFieldsAfterPost(fieldsArr) {
+        fieldsArr.forEach(field => field.style.border = '');
     }
 
     function showThanksModal(message) {
