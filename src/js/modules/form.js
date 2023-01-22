@@ -1,12 +1,13 @@
 import { showPopup } from "../services/services";
 import { postData } from "../services/services";
 import { closePopup } from "../services/services";
+import { validateInput } from "../services/services";
+import { clearAllFieldsAfterPost } from "../services/services";
 
 function forms(formSelector) {
     const forms = document.querySelectorAll(formSelector),
           phoneInputs = document.querySelectorAll('[data-phone]'),
-          nameInputs = document.querySelectorAll('[data-name]'),
-          onlyNumbersRegex = /^[0-9]+$/;
+          nameInputs = document.querySelectorAll('[data-name]');
 
     const message = {
         loading: '../assets/img/form/spinner.svg',
@@ -59,23 +60,6 @@ function forms(formSelector) {
         form.style.display = 'block';
     }
 
-    function validateInput(value, input, type) {
-        let checkForPhone = onlyNumbersRegex.test(value) && value.length > 7 && value.length <= 10,
-            checkForName = value.length < 3 || value.length > 15;
-
-        if (value === '') {
-            input.style.border = '';
-        } else if(type === 'phone' ? !checkForPhone : checkForName) {
-            input.style.border = '1px solid red';
-        } else {
-            input.style.border = '1px solid green';
-        }
-    }
-
-    function clearAllFieldsAfterPost(fieldsArr) {
-        fieldsArr.forEach(field => field.style.border = '');
-    }
-
     function showThanksModal(message) {
         const popupWindow = document.querySelector('.popup_engineer'),
               prevModalDialog = popupWindow.querySelector('.popup_content')
@@ -114,7 +98,7 @@ function forms(formSelector) {
     }
 
     phoneInputs.forEach(input => {
-        input.addEventListener('input', (e) => validateInput(e.target.value, input, 'phone'))
+        input.addEventListener('input', (e) => validateInput(e.target.value, input, 'number'))
     })
 
     nameInputs.forEach(input => {

@@ -2822,6 +2822,31 @@ $({ target: 'Object', stat: true }, {
 
 /***/ }),
 
+/***/ "./node_modules/core-js/modules/es.object.keys.js":
+/*!********************************************************!*\
+  !*** ./node_modules/core-js/modules/es.object.keys.js ***!
+  \********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var $ = __webpack_require__(/*! ../internals/export */ "./node_modules/core-js/internals/export.js");
+var toObject = __webpack_require__(/*! ../internals/to-object */ "./node_modules/core-js/internals/to-object.js");
+var nativeKeys = __webpack_require__(/*! ../internals/object-keys */ "./node_modules/core-js/internals/object-keys.js");
+var fails = __webpack_require__(/*! ../internals/fails */ "./node_modules/core-js/internals/fails.js");
+
+var FAILS_ON_PRIMITIVES = fails(function () { nativeKeys(1); });
+
+// `Object.keys` method
+// https://tc39.github.io/ecma262/#sec-object.keys
+$({ target: 'Object', stat: true, forced: FAILS_ON_PRIMITIVES }, {
+  keys: function keys(it) {
+    return nativeKeys(toObject(it));
+  }
+});
+
+
+/***/ }),
+
 /***/ "./node_modules/core-js/modules/es.object.to-string.js":
 /*!*************************************************************!*\
   !*** ./node_modules/core-js/modules/es.object.to-string.js ***!
@@ -18165,11 +18190,13 @@ __webpack_require__.r(__webpack_exports__);
 window.addEventListener('DOMContentLoaded', function () {
   Object(_modules_modal__WEBPACK_IMPORTED_MODULE_1__["default"])('.popup_engineer', '.popup_engineer_btn', '.popup_close');
   Object(_modules_modal__WEBPACK_IMPORTED_MODULE_1__["default"])('.popup', '.phone_link', '.popup_close');
-  Object(_modules_modal__WEBPACK_IMPORTED_MODULE_1__["default"])('.popup_calc', '.popup_calc_btn', '.popup_calc_close');
+  Object(_modules_modal__WEBPACK_IMPORTED_MODULE_1__["default"])('.popup_calc', '.popup_calc_btn', '.popup_calc_close'); // modal('.popup_calc_profile', '.popup_calc_button' , '.popup_calc_profile_close');
+
   Object(_modules_form__WEBPACK_IMPORTED_MODULE_2__["default"])("form");
   Object(_modules_timer__WEBPACK_IMPORTED_MODULE_3__["default"])('#timer', '2024-01-01');
   Object(_modules_tabs__WEBPACK_IMPORTED_MODULE_4__["default"])('.glazing_block', '.glazing_content', '.glazing_slider', 'tab-active', 'div.glazing_block img', 'div.glazing_block a', 'div.glazing_block');
-  Object(_modules_tabs__WEBPACK_IMPORTED_MODULE_4__["default"])('.decoration_item', '.decoration-content', '.decoration_slider', 'after_click', 'div.decoration_item', 'div.decoration_item a'); // calc();
+  Object(_modules_tabs__WEBPACK_IMPORTED_MODULE_4__["default"])('.decoration_item', '.decoration-content', '.decoration_slider', 'after_click', 'div.decoration_item', 'div.decoration_item a');
+  Object(_modules_calc__WEBPACK_IMPORTED_MODULE_5__["default"])();
 });
 
 /***/ }),
@@ -18186,14 +18213,56 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! core-js/modules/web.dom-collections.for-each */ "./node_modules/core-js/modules/web.dom-collections.for-each.js");
 /* harmony import */ var core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _services_services__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../services/services */ "./src/js/services/services.js");
+/* harmony import */ var _modal__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./modal */ "./src/js/modules/modal.js");
+
+
+
 
 
 
 function calc() {
-  var popupCalcButton = document.querySelectorAll('.popup_calc_btn');
-  popupCalcButton.forEach(function (button) {
-    return button.addEventListener('click');
+  var balconyIcons = document.querySelectorAll('.balcon_icons_img'),
+      bigBalconyImg = document.querySelectorAll('.big_img img'),
+      balconySize = document.querySelectorAll('[data-size]'),
+      buttonFurther = document.querySelector('.popup_calc_button');
+
+  function activeBalconyImg(e) {
+    var defaultVal = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : balconyIcons[0];
+    var currImg = e ? e.target : defaultVal;
+    balconyIcons.forEach(function (img) {
+      return img.classList.remove('do_image_more');
+    });
+    bigBalconyImg.forEach(function (img) {
+      return img.style.display = 'none';
+    });
+
+    if (currImg instanceof HTMLImageElement) {
+      currImg.parentElement.classList.add('do_image_more');
+      bigBalconyImg.forEach(function (img) {
+        if (img.getAttribute('alt') === currImg.alt) {
+          img.style.display = 'flex';
+          Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["saveBalconyParameters"])(img.getAttribute('alt'), img);
+        }
+      });
+    }
+  }
+
+  function activateCalcProfilePopup() {
+    Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["clearAllFieldsAfterPost"])(balconySize);
+    Object(_modal__WEBPACK_IMPORTED_MODULE_2__["default"])('.popup_calc_profile', '.popup_calc_button', '.popup_calc_profile_close');
+  }
+
+  balconyIcons.forEach(function (img) {
+    return img.addEventListener('click', function (e) {
+      return activeBalconyImg(e);
+    });
   });
+  balconySize.forEach(function (input) {
+    return input.addEventListener('input', function (e) {
+      return Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["validateInput"])(e.target.value, input, 'size');
+    });
+  });
+  buttonFurther.addEventListener('click', activateCalcProfilePopup);
 }
 
 /* harmony default export */ __webpack_exports__["default"] = (calc);
@@ -18235,11 +18304,12 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
+
 function forms(formSelector) {
   var forms = document.querySelectorAll(formSelector),
       phoneInputs = document.querySelectorAll('[data-phone]'),
-      nameInputs = document.querySelectorAll('[data-name]'),
-      onlyNumbersRegex = /^[0-9]+$/;
+      nameInputs = document.querySelectorAll('[data-name]');
   var message = {
     loading: '../assets/img/form/spinner.svg',
     success: 'Спасибо! Мы скоро с вами свяжемся',
@@ -18267,8 +18337,8 @@ function forms(formSelector) {
         showThanksModal(message.failure);
       }).finally(function () {
         form.reset();
-        clearAllFieldsAfterPost(phoneInputs);
-        clearAllFieldsAfterPost(nameInputs);
+        Object(_services_services__WEBPACK_IMPORTED_MODULE_7__["clearAllFieldsAfterPost"])(phoneInputs);
+        Object(_services_services__WEBPACK_IMPORTED_MODULE_7__["clearAllFieldsAfterPost"])(nameInputs);
         statusMessage.remove();
       });
     });
@@ -18278,25 +18348,6 @@ function forms(formSelector) {
     thanksModal.remove();
     Object(_services_services__WEBPACK_IMPORTED_MODULE_7__["closePopup"])(popup);
     form.style.display = 'block';
-  }
-
-  function validateInput(value, input, type) {
-    var checkForPhone = onlyNumbersRegex.test(value) && value.length > 7 && value.length <= 10,
-        checkForName = value.length < 3 || value.length > 15;
-
-    if (value === '') {
-      input.style.border = '';
-    } else if (type === 'phone' ? !checkForPhone : checkForName) {
-      input.style.border = '1px solid red';
-    } else {
-      input.style.border = '1px solid green';
-    }
-  }
-
-  function clearAllFieldsAfterPost(fieldsArr) {
-    fieldsArr.forEach(function (field) {
-      return field.style.border = '';
-    });
   }
 
   function showThanksModal(message) {
@@ -18328,12 +18379,12 @@ function forms(formSelector) {
 
   phoneInputs.forEach(function (input) {
     input.addEventListener('input', function (e) {
-      return validateInput(e.target.value, input, 'phone');
+      return Object(_services_services__WEBPACK_IMPORTED_MODULE_7__["validateInput"])(e.target.value, input, 'number');
     });
   });
   nameInputs.forEach(function (input) {
     input.addEventListener('input', function (e) {
-      return validateInput(e.target.value, input, 'name');
+      return Object(_services_services__WEBPACK_IMPORTED_MODULE_7__["validateInput"])(e.target.value, input, 'name');
     });
   });
 }
@@ -18517,7 +18568,7 @@ function timer(id, deadline) {
 /*!*************************************!*\
   !*** ./src/js/services/services.js ***!
   \*************************************/
-/*! exports provided: postData, getResources, showPopup, closePopup */
+/*! exports provided: postData, getResources, showPopup, closePopup, validateInput, clearAllFieldsAfterPost, saveBalconyParameters */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -18526,14 +18577,23 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getResources", function() { return getResources; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "showPopup", function() { return showPopup; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "closePopup", function() { return closePopup; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "validateInput", function() { return validateInput; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "clearAllFieldsAfterPost", function() { return clearAllFieldsAfterPost; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "saveBalconyParameters", function() { return saveBalconyParameters; });
 /* harmony import */ var core_js_modules_es_array_concat__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! core-js/modules/es.array.concat */ "./node_modules/core-js/modules/es.array.concat.js");
 /* harmony import */ var core_js_modules_es_array_concat__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_es_array_concat__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var core_js_modules_es_object_to_string__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! core-js/modules/es.object.to-string */ "./node_modules/core-js/modules/es.object.to-string.js");
-/* harmony import */ var core_js_modules_es_object_to_string__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_es_object_to_string__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var core_js_modules_es_promise__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! core-js/modules/es.promise */ "./node_modules/core-js/modules/es.promise.js");
-/* harmony import */ var core_js_modules_es_promise__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_es_promise__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! regenerator-runtime/runtime */ "./node_modules/regenerator-runtime/runtime.js");
-/* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var core_js_modules_es_object_keys__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! core-js/modules/es.object.keys */ "./node_modules/core-js/modules/es.object.keys.js");
+/* harmony import */ var core_js_modules_es_object_keys__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_es_object_keys__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var core_js_modules_es_object_to_string__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! core-js/modules/es.object.to-string */ "./node_modules/core-js/modules/es.object.to-string.js");
+/* harmony import */ var core_js_modules_es_object_to_string__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_es_object_to_string__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var core_js_modules_es_promise__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! core-js/modules/es.promise */ "./node_modules/core-js/modules/es.promise.js");
+/* harmony import */ var core_js_modules_es_promise__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_es_promise__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! core-js/modules/web.dom-collections.for-each */ "./node_modules/core-js/modules/web.dom-collections.for-each.js");
+/* harmony import */ var core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! regenerator-runtime/runtime */ "./node_modules/regenerator-runtime/runtime.js");
+/* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_5__);
+
+
 
 
 
@@ -18611,6 +18671,49 @@ var showPopup = function showPopup(popup) {
 var closePopup = function closePopup(popup) {
   return popup.style.display = 'none';
 };
+
+var saveBalconyParameters = function saveBalconyParameters(value, el) {
+  var key = el.getAttribute('id') ? el.getAttribute('id') : Object.keys(el.dataset)[0];
+
+  if (key) {
+    localStorage.setItem(key, value);
+  }
+};
+
+function validateInput(value, input, type) {
+  var onlyNumbersRegex = /^[0-9]+$/;
+  var checkForPhone = onlyNumbersRegex.test(value) && value.length > 7 && value.length <= 10,
+      checkForSize = onlyNumbersRegex.test(value),
+      checkForName = value.length < 3 || value.length > 15;
+
+  if (value === '') {
+    input.style.border = '';
+  } else if (type === 'number' ? !checkForPhone : type === 'size' ? !checkForSize : checkForName) {
+    input.style.border = '1px solid red';
+  } else {
+    input.style.border = '1px solid green';
+  }
+
+  saveBalconyParameters(value, input);
+}
+
+;
+
+function clearAllFieldsAfterPost(fieldsArr) {
+  fieldsArr.forEach(function (field) {
+    return field.style.border = '';
+  });
+}
+
+;
+
+function activateNextStep(inputs) {
+  clearAllFieldsAfterPost(inputs);
+  modal('.popup_calc_profile', '.popup_calc_button', '.popup_calc_profile_close');
+}
+
+
+
 
 
 
