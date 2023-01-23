@@ -18213,7 +18213,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! core-js/modules/web.dom-collections.for-each */ "./node_modules/core-js/modules/web.dom-collections.for-each.js");
 /* harmony import */ var core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _services_services__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../services/services */ "./src/js/services/services.js");
-/* harmony import */ var _modal__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./modal */ "./src/js/modules/modal.js");
+
 
 
 
@@ -18221,10 +18221,13 @@ __webpack_require__.r(__webpack_exports__);
 
 
 function calc() {
-  var balconyIcons = document.querySelectorAll('.balcon_icons_img'),
-      bigBalconyImg = document.querySelectorAll('.big_img img'),
-      balconySize = document.querySelectorAll('[data-size]'),
-      buttonFurther = document.querySelector('.popup_calc_button');
+  var calcPopup = document.querySelector('.popup_calc'),
+      calcProfilePopup = document.querySelector('.popup_calc_profile'),
+      balconyIcons = calcPopup.querySelectorAll('.balcon_icons_img'),
+      bigBalconyImg = calcPopup.querySelectorAll('.big_img img'),
+      balconySize = calcPopup.querySelectorAll('[data-size]'),
+      buttonFurther = calcPopup.querySelector('.popup_calc_button');
+  localStorage.setItem("type", "Тип1");
 
   function activeBalconyImg(e) {
     var defaultVal = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : balconyIcons[0];
@@ -18248,8 +18251,26 @@ function calc() {
   }
 
   function activateCalcProfilePopup() {
-    Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["clearAllFieldsAfterPost"])(balconySize);
-    Object(_modal__WEBPACK_IMPORTED_MODULE_2__["default"])('.popup_calc_profile', '.popup_calc_button', '.popup_calc_profile_close');
+    var validateCheck = true;
+    balconySize.forEach(function (input) {
+      if (!Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["validateInput"])(input.value, input, 'size')) {
+        validateCheck = false;
+      }
+    });
+
+    if (validateCheck) {
+      Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["clearAllFieldsAfterPost"])(balconySize);
+      Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["closePopup"])(calcPopup);
+      Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["showPopup"])(calcProfilePopup);
+    } else {
+      balconySize.forEach(function (input) {
+        if (input.value === '') {
+          input.style.border = '1px solid red';
+        } else {
+          input.style.border = '1px solid green';
+        }
+      });
+    }
   }
 
   balconyIcons.forEach(function (img) {
@@ -18684,24 +18705,30 @@ function validateInput(value, input, type) {
   var onlyNumbersRegex = /^[0-9]+$/;
   var checkForPhone = onlyNumbersRegex.test(value) && value.length > 7 && value.length <= 10,
       checkForSize = onlyNumbersRegex.test(value),
-      checkForName = value.length < 3 || value.length > 15;
+      checkForName = value.length < 3 || value.length > 15,
+      validateStatus;
 
   if (value === '') {
     input.style.border = '';
+    validateStatus = false;
   } else if (type === 'number' ? !checkForPhone : type === 'size' ? !checkForSize : checkForName) {
     input.style.border = '1px solid red';
+    validateStatus = false;
   } else {
     input.style.border = '1px solid green';
+    validateStatus = true;
   }
 
   saveBalconyParameters(value, input);
+  return validateStatus;
 }
 
 ;
 
 function clearAllFieldsAfterPost(fieldsArr) {
   fieldsArr.forEach(function (field) {
-    return field.style.border = '';
+    field.style.border = '';
+    field.value = '';
   });
 }
 

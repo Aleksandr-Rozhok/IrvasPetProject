@@ -34,21 +34,29 @@ function validateInput(value, input, type) {
     const onlyNumbersRegex = /^[0-9]+$/;
     let checkForPhone = onlyNumbersRegex.test(value) && value.length > 7 && value.length <= 10,
         checkForSize = onlyNumbersRegex.test(value),
-        checkForName = value.length < 3 || value.length > 15;
+        checkForName = value.length < 3 || value.length > 15,
+        validateStatus;
 
     if (value === '') {
         input.style.border = '';
+        validateStatus = false;
     } else if (type === 'number' ? !checkForPhone : type === 'size' ? !checkForSize : checkForName) {
         input.style.border = '1px solid red';
+        validateStatus = false;
     } else {
         input.style.border = '1px solid green';
+        validateStatus = true;
     }
 
     saveBalconyParameters(value, input);
+    return validateStatus;
 };
 
 function clearAllFieldsAfterPost(fieldsArr) {
-    fieldsArr.forEach(field => field.style.border = '');
+    fieldsArr.forEach(field => {
+        field.style.border = '';
+        field.value = '';
+    });
 };
 
 function activateNextStep(inputs) {
