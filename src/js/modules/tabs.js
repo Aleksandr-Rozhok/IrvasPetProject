@@ -3,7 +3,7 @@ function tabs(themeTabs, contentTabs, containerTabs, activeClass, firstCheck, se
           informationTabs = document.querySelectorAll(contentTabs),
           tabHeader = document.querySelector(containerTabs);
 
-    tabHeader.addEventListener('click', e => {
+    tabHeader.addEventListener("click", e => {
         console.log(e.target)
         if (e.target && e.target.matches(firstCheck) || e.target.matches(secondCheck) || e.target.matches(thirdCheck)) {
             titleTabs.forEach((item, i) => {
@@ -17,7 +17,7 @@ function tabs(themeTabs, contentTabs, containerTabs, activeClass, firstCheck, se
 
 const hideTabContent = () => {
     informationTabs.forEach(tab => {
-        tab.style.display = 'None';
+        tab.style.display = "None";
     });
 
     titleTabs.forEach(item => {
@@ -30,13 +30,13 @@ const hideTabContent = () => {
 }
 
 const showTabContent = (i = 0) => {
-    if (titleTabs[i].children[0].classList.contains('no_click')) {
+    if (titleTabs[i].children[0].classList.contains("no_click")) {
         titleTabs[i].children[0].classList.add(activeClass);
     } else {
         titleTabs[i].classList.add(activeClass);
     }
 
-    informationTabs[i].style.display = 'Flex';
+    informationTabs[i].style.display = "Flex";
 }
 }
 

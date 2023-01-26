@@ -3,18 +3,24 @@ import { clearAllFieldsAfterPost } from "../services/services";
 import { saveBalconyParameters } from "../services/services";
 import { closePopup } from "../services/services";
 import { showPopup } from "../services/services";
-import { checkBoxToggle } from "../services/services";
+import { addCloseEvent } from "../services/services";
 
-function calc() {
+function calc () {
   const calcPopup = document.querySelector(".popup_calc"),
     calcProfilePopup = document.querySelector(".popup_calc_profile"),
-    checkBoxCalcProfile = calcProfilePopup.querySelectorAll("[data-window-type]"),
     calcProfileButton = calcProfilePopup.querySelector(".popup_calc_profile_button"),
     balconyIcons = calcPopup.querySelectorAll(".balcon_icons_img"),
     bigBalconyImg = calcPopup.querySelectorAll(".big_img img"),
     balconySize = calcPopup.querySelectorAll("[data-size]"),
-    buttonFurther = calcPopup.querySelector(".popup_calc_button");
-  localStorage.setItem("type", "Тип1");
+    buttonFurther = calcPopup.querySelector(".popup_calc_button"),
+    checkboxes = document.querySelectorAll(".checkbox"),
+    windowTypeSelect = document.querySelector("#view_type");
+
+  localStorage.setItem("form", "Тип1");
+  localStorage.setItem("type", "tree");
+  localStorage.setItem("profile", "cold");
+  checkboxes[0].checked = true;
+  addCloseEvent(calcProfilePopup);
 
   function activeBalconyImg(e, defaultVal = balconyIcons[0]) {
     let currImg = e ? e.target : defaultVal;
@@ -33,7 +39,7 @@ function calc() {
     }
   }
 
-  function activateCalcProfilePopup() {
+  function activateCalcProfilePopup () {
     let validateCheck = true;
 
     balconySize.forEach((input) => {
@@ -57,21 +63,23 @@ function calc() {
     }
   }
 
-  function checkWindowsType() {
-    let cold = "none";
-    let warm = "none";
+  function checkWindowsType (checkbox) {
+    checkboxes.forEach(item => {
+        item.checked = false;
+    })
 
-    checkBoxCalcProfile.forEach((checkBox) => {
-      const computedStyles = window.getComputedStyle(checkBox, "::before");
-      const beforeValue = computedStyles.getPropertyValue("content");
-    });
+    checkbox.checked = true;
+    if (checkbox.getAttribute("id")) {
+        localStorage.setItem("profile", checkbox.getAttribute("id"));
+    }
   }
 
   balconyIcons.forEach((img) => img.addEventListener("click", (e) => activeBalconyImg(e)));
   balconySize.forEach((input) => input.addEventListener("input", (e) => validateInput(e.target.value, input, "size")));
   buttonFurther.addEventListener("click", activateCalcProfilePopup);
   calcProfileButton.addEventListener("click", checkWindowsType);
-  checkBoxCalcProfile.forEach(item => item.parentElement.addEventListener('click', (e) => checkBoxToggle(checkBoxCalcProfile, e.target)));
+  checkboxes.forEach(item => item.parentElement.addEventListener("click", (e) => checkWindowsType(e.target)));
+  windowTypeSelect.addEventListener("change", (e) => localStorage.setItem("type", e.target.value))
 }
 
 export default calc;

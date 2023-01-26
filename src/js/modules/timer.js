@@ -16,11 +16,11 @@ function timer(id, deadline) {
         };    
     
         return {
-            'total': t,
-            'days': days,
-            'hours': hours,
-            'minutes': minutes,
-            'seconds': seconds
+            "total": t,
+            "days": days,
+            "hours": hours,
+            "minutes": minutes,
+            "seconds": seconds
         };
     }
     
@@ -34,10 +34,10 @@ function timer(id, deadline) {
     
     function setClock(selector, endTime) {
         const timer = document.querySelector(selector),
-              days = timer.querySelector('#days'),
-              hours = timer.querySelector('#hours'),
-              minutes = timer.querySelector('#minutes'),
-              seconds = timer.querySelector('#seconds'),
+              days = timer.querySelector("#days"),
+              hours = timer.querySelector("#hours"),
+              minutes = timer.querySelector("#minutes"),
+              seconds = timer.querySelector("#seconds"),
               timeInterval = setInterval(updateClock, 1000);
         
         updateClock();

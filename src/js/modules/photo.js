@@ -1,12 +1,12 @@
 function photo () {
-    const previewPhoto = document.querySelectorAll('.preview');
+    const previewPhoto = document.querySelectorAll(".preview");
 
     function createBigPhoto (e) {
-        const photoDiv = document.createElement('div');
-        const currentSrc = e.target.getAttribute('src');
-        const id = currentSrc.split('').filter(el => !isNaN(el))[0];
+        const photoDiv = document.createElement("div");
+        const currentSrc = e.target.getAttribute("src");
+        const id = currentSrc.split("").filter(el => !isNaN(el))[0];
 
-        photoDiv.classList.add('customBigImg');
+        photoDiv.classList.add("customBigImg");
         photoDiv.style.cssText = `
             display: flex;
             justify-content: center;
@@ -32,13 +32,13 @@ function photo () {
 
         document.body.append(photoDiv);
         
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'Escape' && photoDiv) {
+        document.addEventListener("keydown", (e) => {
+            if (e.code === "Escape" && photoDiv) {
                 photoDiv.remove();
             }
           });
         
-          photoDiv.addEventListener('click', (e) => {
+          photoDiv.addEventListener("click", (e) => {
             if (photoDiv && e.target === photoDiv) {
                 photoDiv.remove();
             }
@@ -46,7 +46,7 @@ function photo () {
     };
 
     previewPhoto.forEach(photo => {
-        photo.addEventListener('click', (e) => createBigPhoto(e))
+        photo.addEventListener("click", (e) => createBigPhoto(e))
     });
 }
 

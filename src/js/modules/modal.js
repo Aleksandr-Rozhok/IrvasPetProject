@@ -1,5 +1,6 @@
 import { showPopup } from "../services/services";
 import { closePopup } from "../services/services";
+import { addCloseEvent } from "../services/services";
 
 function modal(mainPopup, actionButton, closeButton, popupForTimer) {
     const engineerPopup = document.querySelector(mainPopup),
@@ -7,20 +8,10 @@ function modal(mainPopup, actionButton, closeButton, popupForTimer) {
           closeEngineerPopup = engineerPopup.querySelector(closeButton); 
 
 
-    callButton.forEach(elem => elem.addEventListener('click', () => showPopup(engineerPopup)));
-    closeEngineerPopup.addEventListener('click', () => closePopup(engineerPopup));
+    callButton.forEach(elem => elem.addEventListener("click", () => showPopup(engineerPopup)));
+    closeEngineerPopup.addEventListener("click", () => closePopup(engineerPopup));
 
-    document.addEventListener('keydown', (e) => {
-        if (e.code === 'Escape' && engineerPopup.style.display === 'flex') {
-            closePopup(engineerPopup);
-        }
-      });
-    
-    engineerPopup.addEventListener('click', (e) => {
-        if (engineerPopup.style.display === 'flex' && e.target === engineerPopup) {
-            closePopup(engineerPopup);
-        }
-    });
+    addCloseEvent(engineerPopup);
 
     if (popupForTimer) {
         setTimeout(function () {

@@ -18680,14 +18680,14 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-window.addEventListener('DOMContentLoaded', function () {
-  Object(_modules_modal__WEBPACK_IMPORTED_MODULE_1__["default"])('.popup_engineer', '.popup_engineer_btn', '.popup_close', '.popup_engineer');
-  Object(_modules_modal__WEBPACK_IMPORTED_MODULE_1__["default"])('.popup', '.phone_link', '.popup_close');
-  Object(_modules_modal__WEBPACK_IMPORTED_MODULE_1__["default"])('.popup_calc', '.popup_calc_btn', '.popup_calc_close');
+window.addEventListener("DOMContentLoaded", function () {
+  Object(_modules_modal__WEBPACK_IMPORTED_MODULE_1__["default"])(".popup_engineer", ".popup_engineer_btn", ".popup_close", ".popup_engineer");
+  Object(_modules_modal__WEBPACK_IMPORTED_MODULE_1__["default"])(".popup", ".phone_link", ".popup_close");
+  Object(_modules_modal__WEBPACK_IMPORTED_MODULE_1__["default"])(".popup_calc", ".popup_calc_btn", ".popup_calc_close");
   Object(_modules_form__WEBPACK_IMPORTED_MODULE_2__["default"])("form");
-  Object(_modules_timer__WEBPACK_IMPORTED_MODULE_3__["default"])('#timer', '2024-01-01');
-  Object(_modules_tabs__WEBPACK_IMPORTED_MODULE_4__["default"])('.glazing_block', '.glazing_content', '.glazing_slider', 'tab-active', 'div.glazing_block img', 'div.glazing_block a', 'div.glazing_block');
-  Object(_modules_tabs__WEBPACK_IMPORTED_MODULE_4__["default"])('.decoration_item', '.decoration-content', '.decoration_slider', 'after_click', 'div.decoration_item', 'div.decoration_item a');
+  Object(_modules_timer__WEBPACK_IMPORTED_MODULE_3__["default"])("#timer", "2024-01-01");
+  Object(_modules_tabs__WEBPACK_IMPORTED_MODULE_4__["default"])(".glazing_block", ".glazing_content", ".glazing_slider", "tab-active", "div.glazing_block img", "div.glazing_block a", "div.glazing_block");
+  Object(_modules_tabs__WEBPACK_IMPORTED_MODULE_4__["default"])(".decoration_item", ".decoration-content", ".decoration_slider", "after_click", "div.decoration_item", "div.decoration_item a");
   Object(_modules_calc__WEBPACK_IMPORTED_MODULE_5__["default"])();
   Object(_modules_photo__WEBPACK_IMPORTED_MODULE_6__["default"])();
 });
@@ -18717,13 +18717,18 @@ __webpack_require__.r(__webpack_exports__);
 function calc() {
   var calcPopup = document.querySelector(".popup_calc"),
       calcProfilePopup = document.querySelector(".popup_calc_profile"),
-      checkBoxCalcProfile = calcProfilePopup.querySelectorAll("[data-window-type]"),
       calcProfileButton = calcProfilePopup.querySelector(".popup_calc_profile_button"),
       balconyIcons = calcPopup.querySelectorAll(".balcon_icons_img"),
       bigBalconyImg = calcPopup.querySelectorAll(".big_img img"),
       balconySize = calcPopup.querySelectorAll("[data-size]"),
-      buttonFurther = calcPopup.querySelector(".popup_calc_button");
-  localStorage.setItem("type", "Тип1");
+      buttonFurther = calcPopup.querySelector(".popup_calc_button"),
+      checkboxes = document.querySelectorAll(".checkbox"),
+      windowTypeSelect = document.querySelector("#view_type");
+  localStorage.setItem("form", "Тип1");
+  localStorage.setItem("type", "tree");
+  localStorage.setItem("profile", "cold");
+  checkboxes[0].checked = true;
+  Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["addCloseEvent"])(calcProfilePopup);
 
   function activeBalconyImg(e) {
     var defaultVal = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : balconyIcons[0];
@@ -18769,13 +18774,15 @@ function calc() {
     }
   }
 
-  function checkWindowsType() {
-    var cold = "none";
-    var warm = "none";
-    checkBoxCalcProfile.forEach(function (checkBox) {
-      var computedStyles = window.getComputedStyle(checkBox, "::before");
-      var beforeValue = computedStyles.getPropertyValue("content");
+  function checkWindowsType(checkbox) {
+    checkboxes.forEach(function (item) {
+      item.checked = false;
     });
+    checkbox.checked = true;
+
+    if (checkbox.getAttribute("id")) {
+      localStorage.setItem("profile", checkbox.getAttribute("id"));
+    }
   }
 
   balconyIcons.forEach(function (img) {
@@ -18790,10 +18797,13 @@ function calc() {
   });
   buttonFurther.addEventListener("click", activateCalcProfilePopup);
   calcProfileButton.addEventListener("click", checkWindowsType);
-  checkBoxCalcProfile.forEach(function (item) {
-    return item.parentElement.addEventListener('click', function (e) {
-      return Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["checkBoxToggle"])(checkBoxCalcProfile, e.target);
+  checkboxes.forEach(function (item) {
+    return item.parentElement.addEventListener("click", function (e) {
+      return checkWindowsType(e.target);
     });
+  });
+  windowTypeSelect.addEventListener("change", function (e) {
+    return localStorage.setItem("type", e.target.value);
   });
 }
 
@@ -18840,28 +18850,28 @@ __webpack_require__.r(__webpack_exports__);
 
 function forms(formSelector) {
   var forms = document.querySelectorAll(formSelector),
-      phoneInputs = document.querySelectorAll('[data-phone]'),
-      nameInputs = document.querySelectorAll('[data-name]');
+      phoneInputs = document.querySelectorAll("[data-phone]"),
+      nameInputs = document.querySelectorAll("[data-name]");
   var message = {
-    loading: '../assets/img/form/spinner.svg',
-    success: 'Спасибо! Мы скоро с вами свяжемся',
-    failure: 'Что-то пошло не так...'
+    loading: "../assets/img/form/spinner.svg",
+    success: "Спасибо! Мы скоро с вами свяжемся",
+    failure: "Что-то пошло не так..."
   };
   forms.forEach(function (form) {
     bindPostData(form);
   });
 
   function bindPostData(form) {
-    form.addEventListener('submit', function (e) {
+    form.addEventListener("submit", function (e) {
       e.preventDefault();
-      var formNotice = e.target.querySelector('.form_notice');
-      var statusMessage = document.createElement('img');
+      var formNotice = e.target.querySelector(".form_notice");
+      var statusMessage = document.createElement("img");
       statusMessage.src = message.loading;
       statusMessage.style.cssText = "\n                display: block;\n                margin: 0 auto;\n            ";
-      formNotice.insertAdjacentElement('afterend', statusMessage);
+      formNotice.insertAdjacentElement("afterend", statusMessage);
       var formData = new FormData(form);
       var json = JSON.stringify(Object.fromEntries(formData.entries()));
-      Object(_services_services__WEBPACK_IMPORTED_MODULE_7__["postData"])('http://localhost:3000/posts', json).then(function (data) {
+      Object(_services_services__WEBPACK_IMPORTED_MODULE_7__["postData"])("http://localhost:3000/posts", json).then(function (data) {
         console.log(data);
         showThanksModal(message.success);
         statusMessage.remove();
@@ -18879,27 +18889,27 @@ function forms(formSelector) {
   function closeFormMessage(thanksModal, popup, form) {
     thanksModal.remove();
     Object(_services_services__WEBPACK_IMPORTED_MODULE_7__["closePopup"])(popup);
-    form.style.display = 'block';
+    form.style.display = "block";
   }
 
   function showThanksModal(message) {
-    var popupWindow = document.querySelector('.popup_engineer'),
-        prevModalDialog = popupWindow.querySelector('.popup_content');
+    var popupWindow = document.querySelector(".popup_engineer"),
+        prevModalDialog = popupWindow.querySelector(".popup_content");
     Object(_services_services__WEBPACK_IMPORTED_MODULE_7__["showPopup"])(popupWindow);
-    prevModalDialog.style.display = 'none';
-    var thanksModal = document.createElement('div');
+    prevModalDialog.style.display = "none";
+    var thanksModal = document.createElement("div");
     thanksModal.innerHTML = "\n            <div class=\"popup_content text-center\">\n                <button type=\"button\" class=\"popup-message_close popup_close\"><strong>&times;</strong></button>\n                <div class=\"form\"><span class=\"popup__message\">".concat(message, "</span></div>\n            </div>");
-    popupWindow.querySelector('.popup_dialog').append(thanksModal);
-    var messageCloseButton = thanksModal.querySelector('.popup-message_close');
-    messageCloseButton.addEventListener('click', function () {
+    popupWindow.querySelector(".popup_dialog").append(thanksModal);
+    var messageCloseButton = thanksModal.querySelector(".popup-message_close");
+    messageCloseButton.addEventListener("click", function () {
       return closeFormMessage(thanksModal, popupWindow, prevModalDialog);
     });
-    document.addEventListener('keydown', function (e) {
-      if (e.code === 'Escape' && thanksModal) {
+    document.addEventListener("keydown", function (e) {
+      if (e.code === "Escape" && thanksModal) {
         closeFormMessage(thanksModal, popupWindow, prevModalDialog);
       }
     });
-    popupWindow.addEventListener('click', function (e) {
+    popupWindow.addEventListener("click", function (e) {
       if (thanksModal && e.target === popupWindow) {
         closeFormMessage(thanksModal, popupWindow, prevModalDialog);
       }
@@ -18910,13 +18920,13 @@ function forms(formSelector) {
   }
 
   phoneInputs.forEach(function (input) {
-    input.addEventListener('input', function (e) {
-      return Object(_services_services__WEBPACK_IMPORTED_MODULE_7__["validateInput"])(e.target.value, input, 'number');
+    input.addEventListener("input", function (e) {
+      return Object(_services_services__WEBPACK_IMPORTED_MODULE_7__["validateInput"])(e.target.value, input, "number");
     });
   });
   nameInputs.forEach(function (input) {
-    input.addEventListener('input', function (e) {
-      return Object(_services_services__WEBPACK_IMPORTED_MODULE_7__["validateInput"])(e.target.value, input, 'name');
+    input.addEventListener("input", function (e) {
+      return Object(_services_services__WEBPACK_IMPORTED_MODULE_7__["validateInput"])(e.target.value, input, "name");
     });
   });
 }
@@ -18941,28 +18951,20 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
 function modal(mainPopup, actionButton, closeButton, popupForTimer) {
   var engineerPopup = document.querySelector(mainPopup),
       callButton = document.querySelectorAll(actionButton),
       closeEngineerPopup = engineerPopup.querySelector(closeButton);
   callButton.forEach(function (elem) {
-    return elem.addEventListener('click', function () {
+    return elem.addEventListener("click", function () {
       return Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["showPopup"])(engineerPopup);
     });
   });
-  closeEngineerPopup.addEventListener('click', function () {
+  closeEngineerPopup.addEventListener("click", function () {
     return Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["closePopup"])(engineerPopup);
   });
-  document.addEventListener('keydown', function (e) {
-    if (e.code === 'Escape' && engineerPopup.style.display === 'flex') {
-      Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["closePopup"])(engineerPopup);
-    }
-  });
-  engineerPopup.addEventListener('click', function (e) {
-    if (engineerPopup.style.display === 'flex' && e.target === engineerPopup) {
-      Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["closePopup"])(engineerPopup);
-    }
-  });
+  Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["addCloseEvent"])(engineerPopup);
 
   if (popupForTimer) {
     setTimeout(function () {
@@ -18995,25 +18997,25 @@ __webpack_require__.r(__webpack_exports__);
 
 
 function photo() {
-  var previewPhoto = document.querySelectorAll('.preview');
+  var previewPhoto = document.querySelectorAll(".preview");
 
   function createBigPhoto(e) {
-    var photoDiv = document.createElement('div');
-    var currentSrc = e.target.getAttribute('src');
-    var id = currentSrc.split('').filter(function (el) {
+    var photoDiv = document.createElement("div");
+    var currentSrc = e.target.getAttribute("src");
+    var id = currentSrc.split("").filter(function (el) {
       return !isNaN(el);
     })[0];
-    photoDiv.classList.add('customBigImg');
+    photoDiv.classList.add("customBigImg");
     photoDiv.style.cssText = "\n            display: flex;\n            justify-content: center;\n            align-items: center;\n            position: fixed;\n            top: 0;\n            left: 0;\n            width: 100%;\n            height: 100%;\n            z-index: 9;\n            background-color: rgba(0, 0, 0, 0.5);";
     photoDiv.innerHTML = "\n            <img src=\"assets/img/our_works/big_img/".concat(id, ".png\" alt=\"window\">");
     photoDiv.children[0].style.cssText = "\n            padding: 2rem 5rem;\n            text-align: center;\n            border-radius: 1rem;\n            background: #ffb903;\n            box-sizing: border-box;\n            height: 600px";
     document.body.append(photoDiv);
-    document.addEventListener('keydown', function (e) {
-      if (e.code === 'Escape' && photoDiv) {
+    document.addEventListener("keydown", function (e) {
+      if (e.code === "Escape" && photoDiv) {
         photoDiv.remove();
       }
     });
-    photoDiv.addEventListener('click', function (e) {
+    photoDiv.addEventListener("click", function (e) {
       if (photoDiv && e.target === photoDiv) {
         photoDiv.remove();
       }
@@ -19022,7 +19024,7 @@ function photo() {
 
   ;
   previewPhoto.forEach(function (photo) {
-    photo.addEventListener('click', function (e) {
+    photo.addEventListener("click", function (e) {
       return createBigPhoto(e);
     });
   });
@@ -19049,7 +19051,7 @@ function tabs(themeTabs, contentTabs, containerTabs, activeClass, firstCheck, se
   var titleTabs = document.querySelectorAll(themeTabs),
       informationTabs = document.querySelectorAll(contentTabs),
       tabHeader = document.querySelector(containerTabs);
-  tabHeader.addEventListener('click', function (e) {
+  tabHeader.addEventListener("click", function (e) {
     console.log(e.target);
 
     if (e.target && e.target.matches(firstCheck) || e.target.matches(secondCheck) || e.target.matches(thirdCheck)) {
@@ -19064,7 +19066,7 @@ function tabs(themeTabs, contentTabs, containerTabs, activeClass, firstCheck, se
 
   var hideTabContent = function hideTabContent() {
     informationTabs.forEach(function (tab) {
-      tab.style.display = 'None';
+      tab.style.display = "None";
     });
     titleTabs.forEach(function (item) {
       if (item.matches("div.".concat(activeClass))) {
@@ -19078,13 +19080,13 @@ function tabs(themeTabs, contentTabs, containerTabs, activeClass, firstCheck, se
   var showTabContent = function showTabContent() {
     var i = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
 
-    if (titleTabs[i].children[0].classList.contains('no_click')) {
+    if (titleTabs[i].children[0].classList.contains("no_click")) {
       titleTabs[i].children[0].classList.add(activeClass);
     } else {
       titleTabs[i].classList.add(activeClass);
     }
 
-    informationTabs[i].style.display = 'Flex';
+    informationTabs[i].style.display = "Flex";
   };
 }
 
@@ -19114,11 +19116,11 @@ function timer(id, deadline) {
 
     ;
     return {
-      'total': t,
-      'days': days,
-      'hours': hours,
-      'minutes': minutes,
-      'seconds': seconds
+      "total": t,
+      "days": days,
+      "hours": hours,
+      "minutes": minutes,
+      "seconds": seconds
     };
   }
 
@@ -19132,10 +19134,10 @@ function timer(id, deadline) {
 
   function setClock(selector, endTime) {
     var timer = document.querySelector(selector),
-        days = timer.querySelector('#days'),
-        hours = timer.querySelector('#hours'),
-        minutes = timer.querySelector('#minutes'),
-        seconds = timer.querySelector('#seconds'),
+        days = timer.querySelector("#days"),
+        hours = timer.querySelector("#hours"),
+        minutes = timer.querySelector("#minutes"),
+        seconds = timer.querySelector("#seconds"),
         timeInterval = setInterval(updateClock, 1000);
     updateClock();
 
@@ -19163,7 +19165,7 @@ function timer(id, deadline) {
 /*!*************************************!*\
   !*** ./src/js/services/services.js ***!
   \*************************************/
-/*! exports provided: postData, getResources, showPopup, closePopup, validateInput, clearAllFieldsAfterPost, saveBalconyParameters, checkBoxToggle */
+/*! exports provided: postData, getResources, showPopup, closePopup, validateInput, clearAllFieldsAfterPost, saveBalconyParameters, addCloseEvent */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -19175,7 +19177,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "validateInput", function() { return validateInput; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "clearAllFieldsAfterPost", function() { return clearAllFieldsAfterPost; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "saveBalconyParameters", function() { return saveBalconyParameters; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "checkBoxToggle", function() { return checkBoxToggle; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "addCloseEvent", function() { return addCloseEvent; });
 /* harmony import */ var core_js_modules_es_array_concat__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! core-js/modules/es.array.concat */ "./node_modules/core-js/modules/es.array.concat.js");
 /* harmony import */ var core_js_modules_es_array_concat__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_es_array_concat__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var core_js_modules_es_object_keys__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! core-js/modules/es.object.keys */ "./node_modules/core-js/modules/es.object.keys.js");
@@ -19305,11 +19307,17 @@ function clearAllFieldsAfterPost(fieldsArr) {
   });
 }
 
-function checkBoxToggle(checkBoxes, item) {
-  checkBoxes.forEach(function (checkBox) {
-    checkBox.classList.toggle('checkbox-custom[id="cold"]::before');
+function addCloseEvent(elem) {
+  document.addEventListener("keydown", function (e) {
+    if (e.code === "Escape" && elem.style.display === "flex") {
+      closePopup(elem);
+    }
   });
-  item.className;
+  elem.addEventListener("click", function (e) {
+    if (elem.style.display === "flex" && e.target === elem) {
+      closePopup(elem);
+    }
+  });
 }
 
 

@@ -59,12 +59,18 @@ function clearAllFieldsAfterPost(fieldsArr) {
   });
 }
 
-function checkBoxToggle(checkBoxes, item) {
-  checkBoxes.forEach((checkBox) => {
-    checkBox.classList.toggle('checkbox-custom[id="cold"]::before');
-  });
-
-  item.className;
+function addCloseEvent (elem) {
+    document.addEventListener("keydown", (e) => {
+        if (e.code === "Escape" && elem.style.display === "flex") {
+            closePopup(elem);
+        }
+      });
+    
+      elem.addEventListener("click", (e) => {
+        if (elem.style.display === "flex" && e.target === elem) {
+            closePopup(elem);
+        }
+    });
 }
 
 export { postData };
@@ -74,4 +80,4 @@ export { closePopup };
 export { validateInput };
 export { clearAllFieldsAfterPost };
 export { saveBalconyParameters };
-export { checkBoxToggle };
+export { addCloseEvent };
