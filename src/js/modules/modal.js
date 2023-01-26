@@ -1,10 +1,11 @@
 import { showPopup } from "../services/services";
 import { closePopup } from "../services/services";
 
-function modal(mainPopup, actionButton, closeButton) {
+function modal(mainPopup, actionButton, closeButton, popupForTimer) {
     const engineerPopup = document.querySelector(mainPopup),
           callButton = document.querySelectorAll(actionButton),
-          closeEngineerPopup = engineerPopup.querySelector(closeButton);
+          closeEngineerPopup = engineerPopup.querySelector(closeButton); 
+
 
     callButton.forEach(elem => elem.addEventListener('click', () => showPopup(engineerPopup)));
     closeEngineerPopup.addEventListener('click', () => closePopup(engineerPopup));
@@ -20,6 +21,12 @@ function modal(mainPopup, actionButton, closeButton) {
             closePopup(engineerPopup);
         }
     });
+
+    if (popupForTimer) {
+        setTimeout(function () {
+            showPopup(document.querySelector(popupForTimer));
+        }, 60000);
+    }
 }
 
 export default modal;

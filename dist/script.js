@@ -148,6 +148,26 @@ module.exports = function (key) {
 
 /***/ }),
 
+/***/ "./node_modules/core-js/internals/advance-string-index.js":
+/*!****************************************************************!*\
+  !*** ./node_modules/core-js/internals/advance-string-index.js ***!
+  \****************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var charAt = __webpack_require__(/*! ../internals/string-multibyte */ "./node_modules/core-js/internals/string-multibyte.js").charAt;
+
+// `AdvanceStringIndex` abstract operation
+// https://tc39.github.io/ecma262/#sec-advancestringindex
+module.exports = function (S, index, unicode) {
+  return index + (unicode ? charAt(S, index).length : 1);
+};
+
+
+/***/ }),
+
 /***/ "./node_modules/core-js/internals/an-instance.js":
 /*!*******************************************************!*\
   !*** ./node_modules/core-js/internals/an-instance.js ***!
@@ -967,6 +987,118 @@ module.exports = function (exec) {
 
 /***/ }),
 
+/***/ "./node_modules/core-js/internals/fix-regexp-well-known-symbol-logic.js":
+/*!******************************************************************************!*\
+  !*** ./node_modules/core-js/internals/fix-regexp-well-known-symbol-logic.js ***!
+  \******************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var createNonEnumerableProperty = __webpack_require__(/*! ../internals/create-non-enumerable-property */ "./node_modules/core-js/internals/create-non-enumerable-property.js");
+var redefine = __webpack_require__(/*! ../internals/redefine */ "./node_modules/core-js/internals/redefine.js");
+var fails = __webpack_require__(/*! ../internals/fails */ "./node_modules/core-js/internals/fails.js");
+var wellKnownSymbol = __webpack_require__(/*! ../internals/well-known-symbol */ "./node_modules/core-js/internals/well-known-symbol.js");
+var regexpExec = __webpack_require__(/*! ../internals/regexp-exec */ "./node_modules/core-js/internals/regexp-exec.js");
+
+var SPECIES = wellKnownSymbol('species');
+
+var REPLACE_SUPPORTS_NAMED_GROUPS = !fails(function () {
+  // #replace needs built-in support for named groups.
+  // #match works fine because it just return the exec results, even if it has
+  // a "grops" property.
+  var re = /./;
+  re.exec = function () {
+    var result = [];
+    result.groups = { a: '7' };
+    return result;
+  };
+  return ''.replace(re, '$<a>') !== '7';
+});
+
+// Chrome 51 has a buggy "split" implementation when RegExp#exec !== nativeExec
+// Weex JS has frozen built-in prototypes, so use try / catch wrapper
+var SPLIT_WORKS_WITH_OVERWRITTEN_EXEC = !fails(function () {
+  var re = /(?:)/;
+  var originalExec = re.exec;
+  re.exec = function () { return originalExec.apply(this, arguments); };
+  var result = 'ab'.split(re);
+  return result.length !== 2 || result[0] !== 'a' || result[1] !== 'b';
+});
+
+module.exports = function (KEY, length, exec, sham) {
+  var SYMBOL = wellKnownSymbol(KEY);
+
+  var DELEGATES_TO_SYMBOL = !fails(function () {
+    // String methods call symbol-named RegEp methods
+    var O = {};
+    O[SYMBOL] = function () { return 7; };
+    return ''[KEY](O) != 7;
+  });
+
+  var DELEGATES_TO_EXEC = DELEGATES_TO_SYMBOL && !fails(function () {
+    // Symbol-named RegExp methods call .exec
+    var execCalled = false;
+    var re = /a/;
+
+    if (KEY === 'split') {
+      // We can't use real regex here since it causes deoptimization
+      // and serious performance degradation in V8
+      // https://github.com/zloirock/core-js/issues/306
+      re = {};
+      // RegExp[@@split] doesn't call the regex's exec method, but first creates
+      // a new one. We need to return the patched regex when creating the new one.
+      re.constructor = {};
+      re.constructor[SPECIES] = function () { return re; };
+      re.flags = '';
+      re[SYMBOL] = /./[SYMBOL];
+    }
+
+    re.exec = function () { execCalled = true; return null; };
+
+    re[SYMBOL]('');
+    return !execCalled;
+  });
+
+  if (
+    !DELEGATES_TO_SYMBOL ||
+    !DELEGATES_TO_EXEC ||
+    (KEY === 'replace' && !REPLACE_SUPPORTS_NAMED_GROUPS) ||
+    (KEY === 'split' && !SPLIT_WORKS_WITH_OVERWRITTEN_EXEC)
+  ) {
+    var nativeRegExpMethod = /./[SYMBOL];
+    var methods = exec(SYMBOL, ''[KEY], function (nativeMethod, regexp, str, arg2, forceStringMethod) {
+      if (regexp.exec === regexpExec) {
+        if (DELEGATES_TO_SYMBOL && !forceStringMethod) {
+          // The native String method already delegates to @@method (this
+          // polyfilled function), leasing to infinite recursion.
+          // We avoid it by directly calling the native @@method method.
+          return { done: true, value: nativeRegExpMethod.call(regexp, str, arg2) };
+        }
+        return { done: true, value: nativeMethod.call(str, regexp, arg2) };
+      }
+      return { done: false };
+    });
+    var stringMethod = methods[0];
+    var regexMethod = methods[1];
+
+    redefine(String.prototype, KEY, stringMethod);
+    redefine(RegExp.prototype, SYMBOL, length == 2
+      // 21.2.5.8 RegExp.prototype[@@replace](string, replaceValue)
+      // 21.2.5.11 RegExp.prototype[@@split](string, limit)
+      ? function (string, arg) { return regexMethod.call(string, this, arg); }
+      // 21.2.5.6 RegExp.prototype[@@match](string)
+      // 21.2.5.9 RegExp.prototype[@@search](string)
+      : function (string) { return regexMethod.call(string, this); }
+    );
+    if (sham) createNonEnumerableProperty(RegExp.prototype[SYMBOL], 'sham', true);
+  }
+};
+
+
+/***/ }),
+
 /***/ "./node_modules/core-js/internals/function-to-string.js":
 /*!**************************************************************!*\
   !*** ./node_modules/core-js/internals/function-to-string.js ***!
@@ -1335,6 +1467,29 @@ module.exports = function (it) {
 /***/ (function(module, exports) {
 
 module.exports = false;
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/is-regexp.js":
+/*!*****************************************************!*\
+  !*** ./node_modules/core-js/internals/is-regexp.js ***!
+  \*****************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var isObject = __webpack_require__(/*! ../internals/is-object */ "./node_modules/core-js/internals/is-object.js");
+var classof = __webpack_require__(/*! ../internals/classof-raw */ "./node_modules/core-js/internals/classof-raw.js");
+var wellKnownSymbol = __webpack_require__(/*! ../internals/well-known-symbol */ "./node_modules/core-js/internals/well-known-symbol.js");
+
+var MATCH = wellKnownSymbol('match');
+
+// `IsRegExp` abstract operation
+// https://tc39.github.io/ecma262/#sec-isregexp
+module.exports = function (it) {
+  var isRegExp;
+  return isObject(it) && ((isRegExp = it[MATCH]) !== undefined ? !!isRegExp : classof(it) == 'RegExp');
+};
 
 
 /***/ }),
@@ -2102,6 +2257,133 @@ shared('inspectSource', function (it) {
 
 /***/ }),
 
+/***/ "./node_modules/core-js/internals/regexp-exec-abstract.js":
+/*!****************************************************************!*\
+  !*** ./node_modules/core-js/internals/regexp-exec-abstract.js ***!
+  \****************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var classof = __webpack_require__(/*! ./classof-raw */ "./node_modules/core-js/internals/classof-raw.js");
+var regexpExec = __webpack_require__(/*! ./regexp-exec */ "./node_modules/core-js/internals/regexp-exec.js");
+
+// `RegExpExec` abstract operation
+// https://tc39.github.io/ecma262/#sec-regexpexec
+module.exports = function (R, S) {
+  var exec = R.exec;
+  if (typeof exec === 'function') {
+    var result = exec.call(R, S);
+    if (typeof result !== 'object') {
+      throw TypeError('RegExp exec method returned something other than an Object or null');
+    }
+    return result;
+  }
+
+  if (classof(R) !== 'RegExp') {
+    throw TypeError('RegExp#exec called on incompatible receiver');
+  }
+
+  return regexpExec.call(R, S);
+};
+
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/regexp-exec.js":
+/*!*******************************************************!*\
+  !*** ./node_modules/core-js/internals/regexp-exec.js ***!
+  \*******************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var regexpFlags = __webpack_require__(/*! ./regexp-flags */ "./node_modules/core-js/internals/regexp-flags.js");
+
+var nativeExec = RegExp.prototype.exec;
+// This always refers to the native implementation, because the
+// String#replace polyfill uses ./fix-regexp-well-known-symbol-logic.js,
+// which loads this file before patching the method.
+var nativeReplace = String.prototype.replace;
+
+var patchedExec = nativeExec;
+
+var UPDATES_LAST_INDEX_WRONG = (function () {
+  var re1 = /a/;
+  var re2 = /b*/g;
+  nativeExec.call(re1, 'a');
+  nativeExec.call(re2, 'a');
+  return re1.lastIndex !== 0 || re2.lastIndex !== 0;
+})();
+
+// nonparticipating capturing group, copied from es5-shim's String#split patch.
+var NPCG_INCLUDED = /()??/.exec('')[1] !== undefined;
+
+var PATCH = UPDATES_LAST_INDEX_WRONG || NPCG_INCLUDED;
+
+if (PATCH) {
+  patchedExec = function exec(str) {
+    var re = this;
+    var lastIndex, reCopy, match, i;
+
+    if (NPCG_INCLUDED) {
+      reCopy = new RegExp('^' + re.source + '$(?!\\s)', regexpFlags.call(re));
+    }
+    if (UPDATES_LAST_INDEX_WRONG) lastIndex = re.lastIndex;
+
+    match = nativeExec.call(re, str);
+
+    if (UPDATES_LAST_INDEX_WRONG && match) {
+      re.lastIndex = re.global ? match.index + match[0].length : lastIndex;
+    }
+    if (NPCG_INCLUDED && match && match.length > 1) {
+      // Fix browsers whose `exec` methods don't consistently return `undefined`
+      // for NPCG, like IE8. NOTE: This doesn' work for /(.?)?/
+      nativeReplace.call(match[0], reCopy, function () {
+        for (i = 1; i < arguments.length - 2; i++) {
+          if (arguments[i] === undefined) match[i] = undefined;
+        }
+      });
+    }
+
+    return match;
+  };
+}
+
+module.exports = patchedExec;
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/regexp-flags.js":
+/*!********************************************************!*\
+  !*** ./node_modules/core-js/internals/regexp-flags.js ***!
+  \********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var anObject = __webpack_require__(/*! ../internals/an-object */ "./node_modules/core-js/internals/an-object.js");
+
+// `RegExp.prototype.flags` getter implementation
+// https://tc39.github.io/ecma262/#sec-get-regexp.prototype.flags
+module.exports = function () {
+  var that = anObject(this);
+  var result = '';
+  if (that.global) result += 'g';
+  if (that.ignoreCase) result += 'i';
+  if (that.multiline) result += 'm';
+  if (that.dotAll) result += 's';
+  if (that.unicode) result += 'u';
+  if (that.sticky) result += 'y';
+  return result;
+};
+
+
+/***/ }),
+
 /***/ "./node_modules/core-js/internals/require-object-coercible.js":
 /*!********************************************************************!*\
   !*** ./node_modules/core-js/internals/require-object-coercible.js ***!
@@ -2292,6 +2574,44 @@ module.exports = function (O, defaultConstructor) {
   var C = anObject(O).constructor;
   var S;
   return C === undefined || (S = anObject(C)[SPECIES]) == undefined ? defaultConstructor : aFunction(S);
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/string-multibyte.js":
+/*!************************************************************!*\
+  !*** ./node_modules/core-js/internals/string-multibyte.js ***!
+  \************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var toInteger = __webpack_require__(/*! ../internals/to-integer */ "./node_modules/core-js/internals/to-integer.js");
+var requireObjectCoercible = __webpack_require__(/*! ../internals/require-object-coercible */ "./node_modules/core-js/internals/require-object-coercible.js");
+
+// `String.prototype.{ codePointAt, at }` methods implementation
+var createMethod = function (CONVERT_TO_STRING) {
+  return function ($this, pos) {
+    var S = String(requireObjectCoercible($this));
+    var position = toInteger(pos);
+    var size = S.length;
+    var first, second;
+    if (position < 0 || position >= size) return CONVERT_TO_STRING ? '' : undefined;
+    first = S.charCodeAt(position);
+    return first < 0xD800 || first > 0xDBFF || position + 1 === size
+      || (second = S.charCodeAt(position + 1)) < 0xDC00 || second > 0xDFFF
+        ? CONVERT_TO_STRING ? S.charAt(position) : first
+        : CONVERT_TO_STRING ? S.slice(position, position + 2) : (first - 0xD800 << 10) + (second - 0xDC00) + 0x10000;
+  };
+};
+
+module.exports = {
+  // `String.prototype.codePointAt` method
+  // https://tc39.github.io/ecma262/#sec-string.prototype.codepointat
+  codeAt: createMethod(false),
+  // `String.prototype.at` method
+  // https://github.com/mathiasbynens/String.prototype.at
+  charAt: createMethod(true)
 };
 
 
@@ -2725,6 +3045,31 @@ $({ target: 'Array', proto: true, forced: FORCED }, {
     }
     A.length = n;
     return A;
+  }
+});
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/modules/es.array.filter.js":
+/*!*********************************************************!*\
+  !*** ./node_modules/core-js/modules/es.array.filter.js ***!
+  \*********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var $ = __webpack_require__(/*! ../internals/export */ "./node_modules/core-js/internals/export.js");
+var $filter = __webpack_require__(/*! ../internals/array-iteration */ "./node_modules/core-js/internals/array-iteration.js").filter;
+var arrayMethodHasSpeciesSupport = __webpack_require__(/*! ../internals/array-method-has-species-support */ "./node_modules/core-js/internals/array-method-has-species-support.js");
+
+// `Array.prototype.filter` method
+// https://tc39.github.io/ecma262/#sec-array.prototype.filter
+// with adding support of @@species
+$({ target: 'Array', proto: true, forced: !arrayMethodHasSpeciesSupport('filter') }, {
+  filter: function filter(callbackfn /* , thisArg */) {
+    return $filter(this, callbackfn, arguments.length > 1 ? arguments[1] : undefined);
   }
 });
 
@@ -3297,6 +3642,152 @@ $({ target: PROMISE, stat: true, forced: INCORRECT_ITERATION }, {
     return capability.promise;
   }
 });
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/modules/es.string.split.js":
+/*!*********************************************************!*\
+  !*** ./node_modules/core-js/modules/es.string.split.js ***!
+  \*********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var fixRegExpWellKnownSymbolLogic = __webpack_require__(/*! ../internals/fix-regexp-well-known-symbol-logic */ "./node_modules/core-js/internals/fix-regexp-well-known-symbol-logic.js");
+var isRegExp = __webpack_require__(/*! ../internals/is-regexp */ "./node_modules/core-js/internals/is-regexp.js");
+var anObject = __webpack_require__(/*! ../internals/an-object */ "./node_modules/core-js/internals/an-object.js");
+var requireObjectCoercible = __webpack_require__(/*! ../internals/require-object-coercible */ "./node_modules/core-js/internals/require-object-coercible.js");
+var speciesConstructor = __webpack_require__(/*! ../internals/species-constructor */ "./node_modules/core-js/internals/species-constructor.js");
+var advanceStringIndex = __webpack_require__(/*! ../internals/advance-string-index */ "./node_modules/core-js/internals/advance-string-index.js");
+var toLength = __webpack_require__(/*! ../internals/to-length */ "./node_modules/core-js/internals/to-length.js");
+var callRegExpExec = __webpack_require__(/*! ../internals/regexp-exec-abstract */ "./node_modules/core-js/internals/regexp-exec-abstract.js");
+var regexpExec = __webpack_require__(/*! ../internals/regexp-exec */ "./node_modules/core-js/internals/regexp-exec.js");
+var fails = __webpack_require__(/*! ../internals/fails */ "./node_modules/core-js/internals/fails.js");
+
+var arrayPush = [].push;
+var min = Math.min;
+var MAX_UINT32 = 0xFFFFFFFF;
+
+// babel-minify transpiles RegExp('x', 'y') -> /x/y and it causes SyntaxError
+var SUPPORTS_Y = !fails(function () { return !RegExp(MAX_UINT32, 'y'); });
+
+// @@split logic
+fixRegExpWellKnownSymbolLogic('split', 2, function (SPLIT, nativeSplit, maybeCallNative) {
+  var internalSplit;
+  if (
+    'abbc'.split(/(b)*/)[1] == 'c' ||
+    'test'.split(/(?:)/, -1).length != 4 ||
+    'ab'.split(/(?:ab)*/).length != 2 ||
+    '.'.split(/(.?)(.?)/).length != 4 ||
+    '.'.split(/()()/).length > 1 ||
+    ''.split(/.?/).length
+  ) {
+    // based on es5-shim implementation, need to rework it
+    internalSplit = function (separator, limit) {
+      var string = String(requireObjectCoercible(this));
+      var lim = limit === undefined ? MAX_UINT32 : limit >>> 0;
+      if (lim === 0) return [];
+      if (separator === undefined) return [string];
+      // If `separator` is not a regex, use native split
+      if (!isRegExp(separator)) {
+        return nativeSplit.call(string, separator, lim);
+      }
+      var output = [];
+      var flags = (separator.ignoreCase ? 'i' : '') +
+                  (separator.multiline ? 'm' : '') +
+                  (separator.unicode ? 'u' : '') +
+                  (separator.sticky ? 'y' : '');
+      var lastLastIndex = 0;
+      // Make `global` and avoid `lastIndex` issues by working with a copy
+      var separatorCopy = new RegExp(separator.source, flags + 'g');
+      var match, lastIndex, lastLength;
+      while (match = regexpExec.call(separatorCopy, string)) {
+        lastIndex = separatorCopy.lastIndex;
+        if (lastIndex > lastLastIndex) {
+          output.push(string.slice(lastLastIndex, match.index));
+          if (match.length > 1 && match.index < string.length) arrayPush.apply(output, match.slice(1));
+          lastLength = match[0].length;
+          lastLastIndex = lastIndex;
+          if (output.length >= lim) break;
+        }
+        if (separatorCopy.lastIndex === match.index) separatorCopy.lastIndex++; // Avoid an infinite loop
+      }
+      if (lastLastIndex === string.length) {
+        if (lastLength || !separatorCopy.test('')) output.push('');
+      } else output.push(string.slice(lastLastIndex));
+      return output.length > lim ? output.slice(0, lim) : output;
+    };
+  // Chakra, V8
+  } else if ('0'.split(undefined, 0).length) {
+    internalSplit = function (separator, limit) {
+      return separator === undefined && limit === 0 ? [] : nativeSplit.call(this, separator, limit);
+    };
+  } else internalSplit = nativeSplit;
+
+  return [
+    // `String.prototype.split` method
+    // https://tc39.github.io/ecma262/#sec-string.prototype.split
+    function split(separator, limit) {
+      var O = requireObjectCoercible(this);
+      var splitter = separator == undefined ? undefined : separator[SPLIT];
+      return splitter !== undefined
+        ? splitter.call(separator, O, limit)
+        : internalSplit.call(String(O), separator, limit);
+    },
+    // `RegExp.prototype[@@split]` method
+    // https://tc39.github.io/ecma262/#sec-regexp.prototype-@@split
+    //
+    // NOTE: This cannot be properly polyfilled in engines that don't support
+    // the 'y' flag.
+    function (regexp, limit) {
+      var res = maybeCallNative(internalSplit, regexp, this, limit, internalSplit !== nativeSplit);
+      if (res.done) return res.value;
+
+      var rx = anObject(regexp);
+      var S = String(this);
+      var C = speciesConstructor(rx, RegExp);
+
+      var unicodeMatching = rx.unicode;
+      var flags = (rx.ignoreCase ? 'i' : '') +
+                  (rx.multiline ? 'm' : '') +
+                  (rx.unicode ? 'u' : '') +
+                  (SUPPORTS_Y ? 'y' : 'g');
+
+      // ^(? + rx + ) is needed, in combination with some S slicing, to
+      // simulate the 'y' flag.
+      var splitter = new C(SUPPORTS_Y ? rx : '^(?:' + rx.source + ')', flags);
+      var lim = limit === undefined ? MAX_UINT32 : limit >>> 0;
+      if (lim === 0) return [];
+      if (S.length === 0) return callRegExpExec(splitter, S) === null ? [S] : [];
+      var p = 0;
+      var q = 0;
+      var A = [];
+      while (q < S.length) {
+        splitter.lastIndex = SUPPORTS_Y ? q : 0;
+        var z = callRegExpExec(splitter, SUPPORTS_Y ? S : S.slice(q));
+        var e;
+        if (
+          z === null ||
+          (e = min(toLength(splitter.lastIndex + (SUPPORTS_Y ? 0 : q)), S.length)) === p
+        ) {
+          q = advanceStringIndex(S, q, unicodeMatching);
+        } else {
+          A.push(S.slice(p, q));
+          if (A.length === lim) return A;
+          for (var i = 1; i <= z.length - 1; i++) {
+            A.push(z[i]);
+            if (A.length === lim) return A;
+          }
+          q = p = e;
+        }
+      }
+      A.push(S.slice(p));
+      return A;
+    }
+  ];
+}, !SUPPORTS_Y);
 
 
 /***/ }),
@@ -18181,6 +18672,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _modules_timer__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./modules/timer */ "./src/js/modules/timer.js");
 /* harmony import */ var _modules_tabs__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./modules/tabs */ "./src/js/modules/tabs.js");
 /* harmony import */ var _modules_calc__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./modules/calc */ "./src/js/modules/calc.js");
+/* harmony import */ var _modules_photo__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./modules/photo */ "./src/js/modules/photo.js");
+
 
 
 
@@ -18188,15 +18681,15 @@ __webpack_require__.r(__webpack_exports__);
 
 
 window.addEventListener('DOMContentLoaded', function () {
-  Object(_modules_modal__WEBPACK_IMPORTED_MODULE_1__["default"])('.popup_engineer', '.popup_engineer_btn', '.popup_close');
+  Object(_modules_modal__WEBPACK_IMPORTED_MODULE_1__["default"])('.popup_engineer', '.popup_engineer_btn', '.popup_close', '.popup_engineer');
   Object(_modules_modal__WEBPACK_IMPORTED_MODULE_1__["default"])('.popup', '.phone_link', '.popup_close');
-  Object(_modules_modal__WEBPACK_IMPORTED_MODULE_1__["default"])('.popup_calc', '.popup_calc_btn', '.popup_calc_close'); // modal('.popup_calc_profile', '.popup_calc_button' , '.popup_calc_profile_close');
-
+  Object(_modules_modal__WEBPACK_IMPORTED_MODULE_1__["default"])('.popup_calc', '.popup_calc_btn', '.popup_calc_close');
   Object(_modules_form__WEBPACK_IMPORTED_MODULE_2__["default"])("form");
   Object(_modules_timer__WEBPACK_IMPORTED_MODULE_3__["default"])('#timer', '2024-01-01');
   Object(_modules_tabs__WEBPACK_IMPORTED_MODULE_4__["default"])('.glazing_block', '.glazing_content', '.glazing_slider', 'tab-active', 'div.glazing_block img', 'div.glazing_block a', 'div.glazing_block');
   Object(_modules_tabs__WEBPACK_IMPORTED_MODULE_4__["default"])('.decoration_item', '.decoration-content', '.decoration_slider', 'after_click', 'div.decoration_item', 'div.decoration_item a');
   Object(_modules_calc__WEBPACK_IMPORTED_MODULE_5__["default"])();
+  Object(_modules_photo__WEBPACK_IMPORTED_MODULE_6__["default"])();
 });
 
 /***/ }),
@@ -18220,31 +18713,34 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
 function calc() {
-  var calcPopup = document.querySelector('.popup_calc'),
-      calcProfilePopup = document.querySelector('.popup_calc_profile'),
-      balconyIcons = calcPopup.querySelectorAll('.balcon_icons_img'),
-      bigBalconyImg = calcPopup.querySelectorAll('.big_img img'),
-      balconySize = calcPopup.querySelectorAll('[data-size]'),
-      buttonFurther = calcPopup.querySelector('.popup_calc_button');
+  var calcPopup = document.querySelector(".popup_calc"),
+      calcProfilePopup = document.querySelector(".popup_calc_profile"),
+      checkBoxCalcProfile = calcProfilePopup.querySelectorAll("[data-window-type]"),
+      calcProfileButton = calcProfilePopup.querySelector(".popup_calc_profile_button"),
+      balconyIcons = calcPopup.querySelectorAll(".balcon_icons_img"),
+      bigBalconyImg = calcPopup.querySelectorAll(".big_img img"),
+      balconySize = calcPopup.querySelectorAll("[data-size]"),
+      buttonFurther = calcPopup.querySelector(".popup_calc_button");
   localStorage.setItem("type", "Тип1");
 
   function activeBalconyImg(e) {
     var defaultVal = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : balconyIcons[0];
     var currImg = e ? e.target : defaultVal;
     balconyIcons.forEach(function (img) {
-      return img.classList.remove('do_image_more');
+      return img.classList.remove("do_image_more");
     });
     bigBalconyImg.forEach(function (img) {
-      return img.style.display = 'none';
+      return img.style.display = "none";
     });
 
     if (currImg instanceof HTMLImageElement) {
-      currImg.parentElement.classList.add('do_image_more');
+      currImg.parentElement.classList.add("do_image_more");
       bigBalconyImg.forEach(function (img) {
-        if (img.getAttribute('alt') === currImg.alt) {
-          img.style.display = 'flex';
-          Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["saveBalconyParameters"])(img.getAttribute('alt'), img);
+        if (img.getAttribute("alt") === currImg.alt) {
+          img.style.display = "flex";
+          Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["saveBalconyParameters"])(img.getAttribute("alt"), img);
         }
       });
     }
@@ -18253,7 +18749,7 @@ function calc() {
   function activateCalcProfilePopup() {
     var validateCheck = true;
     balconySize.forEach(function (input) {
-      if (!Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["validateInput"])(input.value, input, 'size')) {
+      if (!Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["validateInput"])(input.value, input, "size")) {
         validateCheck = false;
       }
     });
@@ -18264,26 +18760,41 @@ function calc() {
       Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["showPopup"])(calcProfilePopup);
     } else {
       balconySize.forEach(function (input) {
-        if (input.value === '') {
-          input.style.border = '1px solid red';
+        if (input.value === "") {
+          input.style.border = "1px solid red";
         } else {
-          input.style.border = '1px solid green';
+          input.style.border = "1px solid green";
         }
       });
     }
   }
 
+  function checkWindowsType() {
+    var cold = "none";
+    var warm = "none";
+    checkBoxCalcProfile.forEach(function (checkBox) {
+      var computedStyles = window.getComputedStyle(checkBox, "::before");
+      var beforeValue = computedStyles.getPropertyValue("content");
+    });
+  }
+
   balconyIcons.forEach(function (img) {
-    return img.addEventListener('click', function (e) {
+    return img.addEventListener("click", function (e) {
       return activeBalconyImg(e);
     });
   });
   balconySize.forEach(function (input) {
-    return input.addEventListener('input', function (e) {
-      return Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["validateInput"])(e.target.value, input, 'size');
+    return input.addEventListener("input", function (e) {
+      return Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["validateInput"])(e.target.value, input, "size");
     });
   });
-  buttonFurther.addEventListener('click', activateCalcProfilePopup);
+  buttonFurther.addEventListener("click", activateCalcProfilePopup);
+  calcProfileButton.addEventListener("click", checkWindowsType);
+  checkBoxCalcProfile.forEach(function (item) {
+    return item.parentElement.addEventListener('click', function (e) {
+      return Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["checkBoxToggle"])(checkBoxCalcProfile, e.target);
+    });
+  });
 }
 
 /* harmony default export */ __webpack_exports__["default"] = (calc);
@@ -18430,7 +18941,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-function modal(mainPopup, actionButton, closeButton) {
+function modal(mainPopup, actionButton, closeButton, popupForTimer) {
   var engineerPopup = document.querySelector(mainPopup),
       callButton = document.querySelectorAll(actionButton),
       closeEngineerPopup = engineerPopup.querySelector(closeButton);
@@ -18452,9 +18963,72 @@ function modal(mainPopup, actionButton, closeButton) {
       Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["closePopup"])(engineerPopup);
     }
   });
+
+  if (popupForTimer) {
+    setTimeout(function () {
+      Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["showPopup"])(document.querySelector(popupForTimer));
+    }, 60000);
+  }
 }
 
 /* harmony default export */ __webpack_exports__["default"] = (modal);
+
+/***/ }),
+
+/***/ "./src/js/modules/photo.js":
+/*!*********************************!*\
+  !*** ./src/js/modules/photo.js ***!
+  \*********************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var core_js_modules_es_array_filter__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! core-js/modules/es.array.filter */ "./node_modules/core-js/modules/es.array.filter.js");
+/* harmony import */ var core_js_modules_es_array_filter__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_es_array_filter__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var core_js_modules_es_string_split__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! core-js/modules/es.string.split */ "./node_modules/core-js/modules/es.string.split.js");
+/* harmony import */ var core_js_modules_es_string_split__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_es_string_split__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! core-js/modules/web.dom-collections.for-each */ "./node_modules/core-js/modules/web.dom-collections.for-each.js");
+/* harmony import */ var core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_2__);
+
+
+
+
+function photo() {
+  var previewPhoto = document.querySelectorAll('.preview');
+
+  function createBigPhoto(e) {
+    var photoDiv = document.createElement('div');
+    var currentSrc = e.target.getAttribute('src');
+    var id = currentSrc.split('').filter(function (el) {
+      return !isNaN(el);
+    })[0];
+    photoDiv.classList.add('customBigImg');
+    photoDiv.style.cssText = "\n            display: flex;\n            justify-content: center;\n            align-items: center;\n            position: fixed;\n            top: 0;\n            left: 0;\n            width: 100%;\n            height: 100%;\n            z-index: 9;\n            background-color: rgba(0, 0, 0, 0.5);";
+    photoDiv.innerHTML = "\n            <img src=\"assets/img/our_works/big_img/".concat(id, ".png\" alt=\"window\">");
+    photoDiv.children[0].style.cssText = "\n            padding: 2rem 5rem;\n            text-align: center;\n            border-radius: 1rem;\n            background: #ffb903;\n            box-sizing: border-box;\n            height: 600px";
+    document.body.append(photoDiv);
+    document.addEventListener('keydown', function (e) {
+      if (e.code === 'Escape' && photoDiv) {
+        photoDiv.remove();
+      }
+    });
+    photoDiv.addEventListener('click', function (e) {
+      if (photoDiv && e.target === photoDiv) {
+        photoDiv.remove();
+      }
+    });
+  }
+
+  ;
+  previewPhoto.forEach(function (photo) {
+    photo.addEventListener('click', function (e) {
+      return createBigPhoto(e);
+    });
+  });
+}
+
+/* harmony default export */ __webpack_exports__["default"] = (photo);
 
 /***/ }),
 
@@ -18589,7 +19163,7 @@ function timer(id, deadline) {
 /*!*************************************!*\
   !*** ./src/js/services/services.js ***!
   \*************************************/
-/*! exports provided: postData, getResources, showPopup, closePopup, validateInput, clearAllFieldsAfterPost, saveBalconyParameters */
+/*! exports provided: postData, getResources, showPopup, closePopup, validateInput, clearAllFieldsAfterPost, saveBalconyParameters, checkBoxToggle */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -18601,6 +19175,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "validateInput", function() { return validateInput; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "clearAllFieldsAfterPost", function() { return clearAllFieldsAfterPost; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "saveBalconyParameters", function() { return saveBalconyParameters; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "checkBoxToggle", function() { return checkBoxToggle; });
 /* harmony import */ var core_js_modules_es_array_concat__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! core-js/modules/es.array.concat */ "./node_modules/core-js/modules/es.array.concat.js");
 /* harmony import */ var core_js_modules_es_array_concat__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_es_array_concat__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var core_js_modules_es_object_keys__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! core-js/modules/es.object.keys */ "./node_modules/core-js/modules/es.object.keys.js");
@@ -18628,9 +19203,9 @@ var postData = function postData(url, data) {
         case 0:
           _context.next = 2;
           return regeneratorRuntime.awrap(fetch(url, {
-            method: 'POST',
+            method: "POST",
             headers: {
-              'Content-type': 'application/json'
+              "Content-type": "application/json"
             },
             body: data
           }));
@@ -18686,15 +19261,15 @@ var getResources = function getResources(url) {
 };
 
 var showPopup = function showPopup(popup) {
-  return popup.style.display = 'flex';
+  return popup.style.display = "flex";
 };
 
 var closePopup = function closePopup(popup) {
-  return popup.style.display = 'none';
+  return popup.style.display = "none";
 };
 
 var saveBalconyParameters = function saveBalconyParameters(value, el) {
-  var key = el.getAttribute('id') ? el.getAttribute('id') : Object.keys(el.dataset)[0];
+  var key = el.getAttribute("id") ? el.getAttribute("id") : Object.keys(el.dataset)[0];
 
   if (key) {
     localStorage.setItem(key, value);
@@ -18708,14 +19283,14 @@ function validateInput(value, input, type) {
       checkForName = value.length < 3 || value.length > 15,
       validateStatus;
 
-  if (value === '') {
-    input.style.border = '';
+  if (value === "") {
+    input.style.border = "";
     validateStatus = false;
-  } else if (type === 'number' ? !checkForPhone : type === 'size' ? !checkForSize : checkForName) {
-    input.style.border = '1px solid red';
+  } else if (type === "number" ? !checkForPhone : type === "size" ? !checkForSize : checkForName) {
+    input.style.border = "1px solid red";
     validateStatus = false;
   } else {
-    input.style.border = '1px solid green';
+    input.style.border = "1px solid green";
     validateStatus = true;
   }
 
@@ -18723,21 +19298,20 @@ function validateInput(value, input, type) {
   return validateStatus;
 }
 
-;
-
 function clearAllFieldsAfterPost(fieldsArr) {
   fieldsArr.forEach(function (field) {
-    field.style.border = '';
-    field.value = '';
+    field.style.border = "";
+    field.value = "";
   });
 }
 
-;
-
-function activateNextStep(inputs) {
-  clearAllFieldsAfterPost(inputs);
-  modal('.popup_calc_profile', '.popup_calc_button', '.popup_calc_profile_close');
+function checkBoxToggle(checkBoxes, item) {
+  checkBoxes.forEach(function (checkBox) {
+    checkBox.classList.toggle('checkbox-custom[id="cold"]::before');
+  });
+  item.className;
 }
+
 
 
 
