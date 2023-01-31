@@ -589,6 +589,32 @@ module.exports = function (target, source) {
 
 /***/ }),
 
+/***/ "./node_modules/core-js/internals/correct-is-regexp-logic.js":
+/*!*******************************************************************!*\
+  !*** ./node_modules/core-js/internals/correct-is-regexp-logic.js ***!
+  \*******************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var wellKnownSymbol = __webpack_require__(/*! ../internals/well-known-symbol */ "./node_modules/core-js/internals/well-known-symbol.js");
+
+var MATCH = wellKnownSymbol('match');
+
+module.exports = function (METHOD_NAME) {
+  var regexp = /./;
+  try {
+    '/./'[METHOD_NAME](regexp);
+  } catch (e) {
+    try {
+      regexp[MATCH] = false;
+      return '/./'[METHOD_NAME](regexp);
+    } catch (f) { /* empty */ }
+  } return false;
+};
+
+
+/***/ }),
+
 /***/ "./node_modules/core-js/internals/correct-prototype-getter.js":
 /*!********************************************************************!*\
   !*** ./node_modules/core-js/internals/correct-prototype-getter.js ***!
@@ -1772,6 +1798,24 @@ var PromiseCapability = function (C) {
 // 25.4.1.5 NewPromiseCapability(C)
 module.exports.f = function (C) {
   return new PromiseCapability(C);
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/not-a-regexp.js":
+/*!********************************************************!*\
+  !*** ./node_modules/core-js/internals/not-a-regexp.js ***!
+  \********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var isRegExp = __webpack_require__(/*! ../internals/is-regexp */ "./node_modules/core-js/internals/is-regexp.js");
+
+module.exports = function (it) {
+  if (isRegExp(it)) {
+    throw TypeError("The method doesn't accept regular expressions");
+  } return it;
 };
 
 
@@ -3076,6 +3120,33 @@ $({ target: 'Array', proto: true, forced: !arrayMethodHasSpeciesSupport('filter'
 
 /***/ }),
 
+/***/ "./node_modules/core-js/modules/es.array.includes.js":
+/*!***********************************************************!*\
+  !*** ./node_modules/core-js/modules/es.array.includes.js ***!
+  \***********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var $ = __webpack_require__(/*! ../internals/export */ "./node_modules/core-js/internals/export.js");
+var $includes = __webpack_require__(/*! ../internals/array-includes */ "./node_modules/core-js/internals/array-includes.js").includes;
+var addToUnscopables = __webpack_require__(/*! ../internals/add-to-unscopables */ "./node_modules/core-js/internals/add-to-unscopables.js");
+
+// `Array.prototype.includes` method
+// https://tc39.github.io/ecma262/#sec-array.prototype.includes
+$({ target: 'Array', proto: true }, {
+  includes: function includes(el /* , fromIndex = 0 */) {
+    return $includes(this, el, arguments.length > 1 ? arguments[1] : undefined);
+  }
+});
+
+// https://tc39.github.io/ecma262/#sec-array.prototype-@@unscopables
+addToUnscopables('includes');
+
+
+/***/ }),
+
 /***/ "./node_modules/core-js/modules/es.array.iterator.js":
 /*!***********************************************************!*\
   !*** ./node_modules/core-js/modules/es.array.iterator.js ***!
@@ -3640,6 +3711,32 @@ $({ target: PROMISE, stat: true, forced: INCORRECT_ITERATION }, {
     });
     if (result.error) reject(result.value);
     return capability.promise;
+  }
+});
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/modules/es.string.includes.js":
+/*!************************************************************!*\
+  !*** ./node_modules/core-js/modules/es.string.includes.js ***!
+  \************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var $ = __webpack_require__(/*! ../internals/export */ "./node_modules/core-js/internals/export.js");
+var notARegExp = __webpack_require__(/*! ../internals/not-a-regexp */ "./node_modules/core-js/internals/not-a-regexp.js");
+var requireObjectCoercible = __webpack_require__(/*! ../internals/require-object-coercible */ "./node_modules/core-js/internals/require-object-coercible.js");
+var correctIsRegExpLogic = __webpack_require__(/*! ../internals/correct-is-regexp-logic */ "./node_modules/core-js/internals/correct-is-regexp-logic.js");
+
+// `String.prototype.includes` method
+// https://tc39.github.io/ecma262/#sec-string.prototype.includes
+$({ target: 'String', proto: true, forced: !correctIsRegExpLogic('includes') }, {
+  includes: function includes(searchString /* , position = 0 */) {
+    return !!~String(requireObjectCoercible(this))
+      .indexOf(notARegExp(searchString), arguments.length > 1 ? arguments[1] : undefined);
   }
 });
 
@@ -18681,9 +18778,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 window.addEventListener("DOMContentLoaded", function () {
-  Object(_modules_modal__WEBPACK_IMPORTED_MODULE_1__["default"])(".popup_engineer", ".popup_engineer_btn", ".popup_close", ".popup_engineer");
-  Object(_modules_modal__WEBPACK_IMPORTED_MODULE_1__["default"])(".popup", ".phone_link", ".popup_close");
-  Object(_modules_modal__WEBPACK_IMPORTED_MODULE_1__["default"])(".popup_calc", ".popup_calc_btn", ".popup_calc_close");
+  Object(_modules_modal__WEBPACK_IMPORTED_MODULE_1__["default"])();
   Object(_modules_form__WEBPACK_IMPORTED_MODULE_2__["default"])("form");
   Object(_modules_timer__WEBPACK_IMPORTED_MODULE_3__["default"])("#timer", "2024-01-01");
   Object(_modules_tabs__WEBPACK_IMPORTED_MODULE_4__["default"])(".glazing_block", ".glazing_content", ".glazing_slider", "tab-active", "div.glazing_block img", "div.glazing_block a", "div.glazing_block");
@@ -18713,10 +18808,12 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-
 function calc() {
   var calcPopup = document.querySelector(".popup_calc"),
       calcProfilePopup = document.querySelector(".popup_calc_profile"),
+      calcProfileCloseButton = calcProfilePopup.querySelector(".popup_calc_profile_close"),
+      calcEndPopup = document.querySelector(".popup_calc_end"),
+      calcEndCloseButton = calcEndPopup.querySelector(".popup_calc_end_close"),
       calcProfileButton = calcProfilePopup.querySelector(".popup_calc_profile_button"),
       balconyIcons = calcPopup.querySelectorAll(".balcon_icons_img"),
       bigBalconyImg = calcPopup.querySelectorAll(".big_img img"),
@@ -18724,11 +18821,9 @@ function calc() {
       buttonFurther = calcPopup.querySelector(".popup_calc_button"),
       checkboxes = document.querySelectorAll(".checkbox"),
       windowTypeSelect = document.querySelector("#view_type");
-  localStorage.setItem("form", "Тип1");
-  localStorage.setItem("type", "tree");
-  localStorage.setItem("profile", "cold");
   checkboxes[0].checked = true;
-  Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["addCloseEvent"])(calcProfilePopup);
+  Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["addCloseEvent"])(calcProfilePopup, calcProfileCloseButton);
+  Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["addCloseEvent"])(calcEndPopup, calcEndCloseButton);
 
   function activeBalconyImg(e) {
     var defaultVal = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : balconyIcons[0];
@@ -18761,8 +18856,7 @@ function calc() {
 
     if (validateCheck) {
       Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["clearAllFieldsAfterPost"])(balconySize);
-      Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["closePopup"])(calcPopup);
-      Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["showPopup"])(calcProfilePopup);
+      Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["goToTheNextPopup"])(calcPopup, calcProfilePopup);
     } else {
       balconySize.forEach(function (input) {
         if (input.value === "") {
@@ -18774,14 +18868,14 @@ function calc() {
     }
   }
 
-  function checkWindowsType(checkbox) {
+  function checkWindowsType(checkboxItem) {
     checkboxes.forEach(function (item) {
       item.checked = false;
     });
-    checkbox.checked = true;
+    checkboxItem.checked = true;
 
-    if (checkbox.getAttribute("id")) {
-      localStorage.setItem("profile", checkbox.getAttribute("id"));
+    if (checkboxItem.getAttribute("id")) {
+      localStorage.setItem("profile", checkboxItem.getAttribute("id"));
     }
   }
 
@@ -18796,14 +18890,16 @@ function calc() {
     });
   });
   buttonFurther.addEventListener("click", activateCalcProfilePopup);
-  calcProfileButton.addEventListener("click", checkWindowsType);
+  calcProfileButton.addEventListener("click", function () {
+    return Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["goToTheNextPopup"])(calcProfilePopup, calcEndPopup);
+  });
   checkboxes.forEach(function (item) {
     return item.parentElement.addEventListener("click", function (e) {
       return checkWindowsType(e.target);
     });
   });
   windowTypeSelect.addEventListener("change", function (e) {
-    return localStorage.setItem("type", e.target.value);
+    return localStorage.setItem("variant", e.target.value);
   });
 }
 
@@ -18847,7 +18943,6 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-
 function forms(formSelector) {
   var forms = document.querySelectorAll(formSelector),
       phoneInputs = document.querySelectorAll("[data-phone]"),
@@ -18865,58 +18960,37 @@ function forms(formSelector) {
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       var formNotice = e.target.querySelector(".form_notice");
+      var currentPopup = e.target.parentElement.parentElement.parentElement.parentElement.className;
       var statusMessage = document.createElement("img");
       statusMessage.src = message.loading;
       statusMessage.style.cssText = "\n                display: block;\n                margin: 0 auto;\n            ";
       formNotice.insertAdjacentElement("afterend", statusMessage);
       var formData = new FormData(form);
-      var json = JSON.stringify(Object.fromEntries(formData.entries()));
+      var objectFromForm = Object.fromEntries(formData.entries());
+
+      if (localStorage.getItem("profile")) {
+        objectFromForm["width"] = localStorage.getItem('width');
+        objectFromForm["height"] = localStorage.getItem("height");
+        objectFromForm["profile"] = localStorage.getItem("profile");
+        objectFromForm["variant"] = localStorage.getItem("variant");
+        objectFromForm["type"] = localStorage.getItem("type");
+      }
+
+      var json = JSON.stringify(objectFromForm);
       Object(_services_services__WEBPACK_IMPORTED_MODULE_7__["postData"])("http://localhost:3000/posts", json).then(function (data) {
         console.log(data);
-        showThanksModal(message.success);
+        Object(_services_services__WEBPACK_IMPORTED_MODULE_7__["showThanksModal"])(".".concat(currentPopup), message.success);
         statusMessage.remove();
       }).catch(function () {
-        showThanksModal(message.failure);
+        Object(_services_services__WEBPACK_IMPORTED_MODULE_7__["showThanksModal"])(".".concat(currentPopup), message.failure);
       }).finally(function () {
         form.reset();
         Object(_services_services__WEBPACK_IMPORTED_MODULE_7__["clearAllFieldsAfterPost"])(phoneInputs);
         Object(_services_services__WEBPACK_IMPORTED_MODULE_7__["clearAllFieldsAfterPost"])(nameInputs);
+        localStorage.clear();
         statusMessage.remove();
       });
     });
-  }
-
-  function closeFormMessage(thanksModal, popup, form) {
-    thanksModal.remove();
-    Object(_services_services__WEBPACK_IMPORTED_MODULE_7__["closePopup"])(popup);
-    form.style.display = "block";
-  }
-
-  function showThanksModal(message) {
-    var popupWindow = document.querySelector(".popup_engineer"),
-        prevModalDialog = popupWindow.querySelector(".popup_content");
-    Object(_services_services__WEBPACK_IMPORTED_MODULE_7__["showPopup"])(popupWindow);
-    prevModalDialog.style.display = "none";
-    var thanksModal = document.createElement("div");
-    thanksModal.innerHTML = "\n            <div class=\"popup_content text-center\">\n                <button type=\"button\" class=\"popup-message_close popup_close\"><strong>&times;</strong></button>\n                <div class=\"form\"><span class=\"popup__message\">".concat(message, "</span></div>\n            </div>");
-    popupWindow.querySelector(".popup_dialog").append(thanksModal);
-    var messageCloseButton = thanksModal.querySelector(".popup-message_close");
-    messageCloseButton.addEventListener("click", function () {
-      return closeFormMessage(thanksModal, popupWindow, prevModalDialog);
-    });
-    document.addEventListener("keydown", function (e) {
-      if (e.code === "Escape" && thanksModal) {
-        closeFormMessage(thanksModal, popupWindow, prevModalDialog);
-      }
-    });
-    popupWindow.addEventListener("click", function (e) {
-      if (thanksModal && e.target === popupWindow) {
-        closeFormMessage(thanksModal, popupWindow, prevModalDialog);
-      }
-    });
-    setTimeout(function () {
-      closeFormMessage(thanksModal, popupWindow, prevModalDialog);
-    }, 4000);
   }
 
   phoneInputs.forEach(function (input) {
@@ -18944,33 +19018,47 @@ function forms(formSelector) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! core-js/modules/web.dom-collections.for-each */ "./node_modules/core-js/modules/web.dom-collections.for-each.js");
-/* harmony import */ var core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _services_services__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../services/services */ "./src/js/services/services.js");
+/* harmony import */ var core_js_modules_es_array_includes__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! core-js/modules/es.array.includes */ "./node_modules/core-js/modules/es.array.includes.js");
+/* harmony import */ var core_js_modules_es_array_includes__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_es_array_includes__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var core_js_modules_es_string_includes__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! core-js/modules/es.string.includes */ "./node_modules/core-js/modules/es.string.includes.js");
+/* harmony import */ var core_js_modules_es_string_includes__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_es_string_includes__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! core-js/modules/web.dom-collections.for-each */ "./node_modules/core-js/modules/web.dom-collections.for-each.js");
+/* harmony import */ var core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_web_dom_collections_for_each__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var _services_services__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../services/services */ "./src/js/services/services.js");
 
 
 
 
 
-function modal(mainPopup, actionButton, closeButton, popupForTimer) {
-  var engineerPopup = document.querySelector(mainPopup),
-      callButton = document.querySelectorAll(actionButton),
-      closeEngineerPopup = engineerPopup.querySelector(closeButton);
-  callButton.forEach(function (elem) {
-    return elem.addEventListener("click", function () {
-      return Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["showPopup"])(engineerPopup);
+
+function modal() {
+  function addAllActionForModal(mainPopup, actionButton, closeButton, popupForTimer) {
+    var engineerPopup = document.querySelector(mainPopup),
+        callButton = document.querySelectorAll(actionButton),
+        closeEngineerPopup = engineerPopup.querySelector(closeButton);
+    callButton.forEach(function (elem) {
+      return elem.addEventListener("click", function () {
+        Object(_services_services__WEBPACK_IMPORTED_MODULE_3__["showPopup"])(engineerPopup);
+
+        if (mainPopup.includes("calc")) {
+          localStorage.setItem("variant", "tree");
+          localStorage.setItem("type", "Тип1");
+          localStorage.setItem("profile", "cold");
+        }
+      });
     });
-  });
-  closeEngineerPopup.addEventListener("click", function () {
-    return Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["closePopup"])(engineerPopup);
-  });
-  Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["addCloseEvent"])(engineerPopup);
+    Object(_services_services__WEBPACK_IMPORTED_MODULE_3__["addCloseEvent"])(engineerPopup, closeEngineerPopup);
 
-  if (popupForTimer) {
-    setTimeout(function () {
-      Object(_services_services__WEBPACK_IMPORTED_MODULE_1__["showPopup"])(document.querySelector(popupForTimer));
-    }, 60000);
+    if (popupForTimer) {
+      setTimeout(function () {
+        Object(_services_services__WEBPACK_IMPORTED_MODULE_3__["showPopup"])(document.querySelector(popupForTimer));
+      }, 60000);
+    }
   }
+
+  addAllActionForModal(".popup_engineer", ".popup_engineer_btn", ".popup_close", ".popup_engineer");
+  addAllActionForModal(".popup", ".phone_link", ".popup_close");
+  addAllActionForModal(".popup_calc", ".popup_calc_btn", ".popup_calc_close");
 }
 
 /* harmony default export */ __webpack_exports__["default"] = (modal);
@@ -19165,7 +19253,7 @@ function timer(id, deadline) {
 /*!*************************************!*\
   !*** ./src/js/services/services.js ***!
   \*************************************/
-/*! exports provided: postData, getResources, showPopup, closePopup, validateInput, clearAllFieldsAfterPost, saveBalconyParameters, addCloseEvent */
+/*! exports provided: postData, getResources, showPopup, closePopup, validateInput, clearAllFieldsAfterPost, saveBalconyParameters, addCloseEvent, goToTheNextPopup, closeFormMessage, showThanksModal */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -19178,6 +19266,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "clearAllFieldsAfterPost", function() { return clearAllFieldsAfterPost; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "saveBalconyParameters", function() { return saveBalconyParameters; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "addCloseEvent", function() { return addCloseEvent; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "goToTheNextPopup", function() { return goToTheNextPopup; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "closeFormMessage", function() { return closeFormMessage; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "showThanksModal", function() { return showThanksModal; });
 /* harmony import */ var core_js_modules_es_array_concat__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! core-js/modules/es.array.concat */ "./node_modules/core-js/modules/es.array.concat.js");
 /* harmony import */ var core_js_modules_es_array_concat__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_es_array_concat__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var core_js_modules_es_object_keys__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! core-js/modules/es.object.keys */ "./node_modules/core-js/modules/es.object.keys.js");
@@ -19307,18 +19398,68 @@ function clearAllFieldsAfterPost(fieldsArr) {
   });
 }
 
-function addCloseEvent(elem) {
+function addCloseEvent(elem, closeButton) {
   document.addEventListener("keydown", function (e) {
     if (e.code === "Escape" && elem.style.display === "flex") {
       closePopup(elem);
+      localStorage.clear();
     }
   });
   elem.addEventListener("click", function (e) {
     if (elem.style.display === "flex" && e.target === elem) {
       closePopup(elem);
+      localStorage.clear();
     }
   });
+  closeButton.addEventListener("click", function () {
+    closePopup(elem);
+    localStorage.clear();
+  });
 }
+
+function goToTheNextPopup(oldPopup, newPopup) {
+  closePopup(oldPopup);
+  showPopup(newPopup);
+}
+
+function closeFormMessage(thanksModal, popup, form) {
+  thanksModal.remove();
+  closePopup(popup);
+  form.style.display = "block";
+}
+
+function showThanksModal(currPopup, message) {
+  var popup = document.querySelector(currPopup),
+      prevModalDialog = popup.querySelector(".popup_content");
+  showPopup(popup);
+  prevModalDialog.style.display = "none";
+  var thanksModal = document.createElement("div");
+  thanksModal.innerHTML = "\n      <div class=\"popup_content text-center\">\n          <button type=\"button\" class=\"popup-message_close popup_close\"><strong>&times;</strong></button>\n          <div class=\"form\"><span class=\"popup__message\">".concat(message, "</span></div>\n      </div>");
+  popup.querySelector(".popup_dialog").append(thanksModal);
+  var messageCloseButton = thanksModal.querySelector(".popup-message_close");
+  messageCloseButton.addEventListener("click", function () {
+    closeFormMessage(thanksModal, popup, prevModalDialog);
+    clearTimeout(closePopupTimeout);
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.code === "Escape" && thanksModal) {
+      closeFormMessage(thanksModal, popup, prevModalDialog);
+      clearTimeout(closePopupTimeout);
+    }
+  });
+  popup.addEventListener("click", function (e) {
+    if (thanksModal && e.target === popup) {
+      closeFormMessage(thanksModal, popup, prevModalDialog);
+      clearTimeout(closePopupTimeout);
+    }
+  });
+  var closePopupTimeout = setTimeout(function () {
+    closeFormMessage(thanksModal, popup, prevModalDialog);
+  }, 4000);
+}
+
+
+
 
 
 

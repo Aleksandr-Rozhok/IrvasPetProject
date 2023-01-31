@@ -1,8 +1,7 @@
-import { showPopup } from "../services/services";
 import { postData } from "../services/services";
-import { closePopup } from "../services/services";
 import { validateInput } from "../services/services";
 import { clearAllFieldsAfterPost } from "../services/services";
+import { showThanksModal } from "../services/services";
 
 function forms(formSelector) {
     const forms = document.querySelectorAll(formSelector),
@@ -23,86 +22,55 @@ function forms(formSelector) {
         form.addEventListener("submit", (e) => {
             e.preventDefault();
             const formNotice = e.target.querySelector(".form_notice");
+            const currentPopup = e.target.parentElement.parentElement.parentElement.parentElement.className;
 
             const statusMessage = document.createElement("img");
             statusMessage.src = message.loading;
             statusMessage.style.cssText = `
                 display: block;
                 margin: 0 auto;
-            `
+            `;
             formNotice.insertAdjacentElement("afterend", statusMessage);
 
             const formData = new FormData(form);
 
-            const json = JSON.stringify(Object.fromEntries(formData.entries()));
+            const objectFromForm = Object.fromEntries(formData.entries());
+
+            if (localStorage.getItem("profile")) {
+                objectFromForm["width"] =  localStorage.getItem('width');
+                objectFromForm["height"] =  localStorage.getItem("height");
+                objectFromForm["profile"] =  localStorage.getItem("profile");
+                objectFromForm["variant"] =  localStorage.getItem("variant");
+                objectFromForm["type"] =  localStorage.getItem("type");
+            }
+
+            const json = JSON.stringify(objectFromForm);
 
             postData("http://localhost:3000/posts", json)
                 .then(data => {
                     console.log(data);
-                    showThanksModal(message.success);
+                    showThanksModal(`.${currentPopup}`, message.success);
                     statusMessage.remove();
                 })
                 .catch(() => {
-                    showThanksModal(message.failure);
+                    showThanksModal(`.${currentPopup}`, message.failure);
                 })
                 .finally(() => {
                     form.reset();
                     clearAllFieldsAfterPost(phoneInputs);
                     clearAllFieldsAfterPost(nameInputs);
+                    localStorage.clear();
                     statusMessage.remove();
-                })
+                });
         })
     }
 
-    function closeFormMessage(thanksModal, popup, form) {
-        thanksModal.remove();
-        closePopup(popup);
-        form.style.display = "block";
-    }
-
-    function showThanksModal(message) {
-        const popupWindow = document.querySelector(".popup_engineer"),
-              prevModalDialog = popupWindow.querySelector(".popup_content")
-              
-        showPopup(popupWindow);
-        prevModalDialog.style.display = "none";
-
-        const thanksModal = document.createElement("div");
-        thanksModal.innerHTML = `
-            <div class="popup_content text-center">
-                <button type="button" class="popup-message_close popup_close"><strong>&times;</strong></button>
-                <div class="form"><span class="popup__message">${message}</span></div>
-            </div>`
-
-        popupWindow.querySelector(".popup_dialog").append(thanksModal);
-
-        const messageCloseButton = thanksModal.querySelector(".popup-message_close");
-
-        messageCloseButton.addEventListener("click", () => closeFormMessage(thanksModal, popupWindow, prevModalDialog));
-
-        document.addEventListener("keydown", (e) => {
-            if (e.code === "Escape" && thanksModal) {
-                closeFormMessage(thanksModal, popupWindow, prevModalDialog);
-            }
-        });
-
-        popupWindow.addEventListener("click", (e) => {
-            if (thanksModal && e.target === popupWindow) {
-                closeFormMessage(thanksModal, popupWindow, prevModalDialog);
-            }
-        });
-
-        setTimeout(() => {
-            closeFormMessage(thanksModal, popupWindow, prevModalDialog);
-        }, 4000)
-    }
-
     phoneInputs.forEach(input => {
-        input.addEventListener("input", (e) => validateInput(e.target.value, input, "number"))
+        input.addEventListener("input", (e) => validateInput(e.target.value, input, "number"));
     })
 
     nameInputs.forEach(input => {
-        input.addEventListener("input", (e) => validateInput(e.target.value, input, "name"))
+        input.addEventListener("input", (e) => validateInput(e.target.value, input, "name"));
     })
 }
 
